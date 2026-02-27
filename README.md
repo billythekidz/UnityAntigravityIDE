@@ -1,5 +1,7 @@
 # Antigravity IDE Support for Unity
 
+*Note: This repository is a fork of [prithvi-bharadwaj/Antigravity-IDE](https://github.com/prithvi-bharadwaj/Antigravity-IDE).*
+
 Integrates **Antigravity** as an external script editor for Unity, providing seamless file opening and project generation for Intellisense.
 
 ## Features
