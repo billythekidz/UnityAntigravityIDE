@@ -5,7 +5,7 @@
 Integrates **Antigravity** as an external script editor for Unity, providing seamless file opening and project generation for Intellisense.
 
 ## Features
-- **Auto-Discovery**: Automatically detects Antigravity installation on macOS.
+- **Auto-Discovery**: Automatically detects Antigravity installation on macOS, Windows, and Linux.
 - **Auto-Default**: Attempts to set Antigravity as the default editor upon first load.
 - **Intellisense Support**: Generates `.csproj` and `.sln` files compatible with Antigravity's language server.
 - **Smart Opening**: Opens files at specific lines and columns.
@@ -26,8 +26,8 @@ Integrates **Antigravity** as an external script editor for Unity, providing sea
 ## Usage
 Once installed, go to **Unity > Preferences > External Tools**.
 - **External Script Editor**: Select **Antigravity**.
-- If it doesn't appear automatically, ensure Antigravity is installed in `/Applications/Antigravity.app`.
+- If it doesn't appear automatically, ensure Antigravity is installed in your system's default application directory (e.g. `/Applications/` on macOS, `%LocalAppData%\Programs\` on Windows, or `/usr/bin/` on Linux).
 
 ## Troubleshooting
-- **Editor not found**: The package looks for `/Applications/Antigravity.app`. If installed elsewhere, ensure the path is correct or manually select the executable.
+- **Editor not found**: The package looks for common installation paths based on your OS. If installed elsewhere, you can browse and select the executable manually.
 - **No Intellisense**: Ensure `Generate .csproj files` is checked in Unity Preferences.

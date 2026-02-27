@@ -11,11 +11,39 @@ using UnityEngine;
 public class AntigravityScriptEditor : IExternalCodeEditor
 {
     const string EditorName = "Antigravity";
-    static readonly string[] KnownPaths =
+
+    private static string[] KnownPaths
     {
-        "/Applications/Antigravity.app",
-        "/Applications/Antigravity.app/Contents/MacOS/Antigravity"
-    };
+        get
+        {
+            var paths = new List<string>();
+
+            if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                paths.Add("/Applications/Antigravity.app");
+                paths.Add("/Applications/Antigravity.app/Contents/MacOS/Antigravity");
+            }
+            else if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                paths.Add(Path.Combine(localAppData, "Programs", "Antigravity", "Antigravity.exe"));
+                
+                var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                paths.Add(Path.Combine(programFiles, "Antigravity", "Antigravity.exe"));
+            }
+            else if (Application.platform == RuntimePlatform.LinuxEditor)
+            {
+                paths.Add("/opt/Antigravity/antigravity");
+                paths.Add("/usr/bin/antigravity");
+                paths.Add("/usr/local/bin/antigravity");
+                
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                paths.Add(Path.Combine(userProfile, ".local", "bin", "antigravity"));
+            }
+
+            return paths.ToArray();
+        }
+    }
 
     static AntigravityScriptEditor()
     {
