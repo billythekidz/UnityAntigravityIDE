@@ -15,6 +15,59 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     const string PrefKey_ReuseWindow = "Antigravity_ReuseWindow";
     const string PrefKey_GenerateLaunchJson = "Antigravity_GenerateLaunchJson";
     const string PrefKey_AnalyzerLevel = "Antigravity_AnalyzerLevel";
+    const string PrefKey_Arguments = "Antigravity_Arguments";
+    const string PrefKey_Extensions = "Antigravity_UserExtensions";
+
+    // ✅ LEARN: Proper filename-based detection like com.unity.ide.vscode
+    static readonly string[] k_SupportedFileNames =
+    {
+        // Windows
+        "antigravity.exe",
+        "antigravity-ide.exe",
+        // macOS
+        "antigravity.app",
+        "antigravity-ide.app",
+        "antigravity",
+        // Linux
+        "antigravity-ide",
+    };
+
+    static readonly string DefaultArgument = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
+
+    string m_Arguments;
+    string Arguments
+    {
+        get => m_Arguments ?? (m_Arguments = EditorPrefs.GetString(PrefKey_Arguments, DefaultArgument));
+        set
+        {
+            m_Arguments = value;
+            EditorPrefs.SetString(PrefKey_Arguments, value);
+        }
+    }
+
+    // ✅ LEARN: HandledExtensions from com.unity.ide.vscode
+    static string[] DefaultExtensions
+    {
+        get
+        {
+            var customExtensions = new[] { "json", "asmdef", "asmref", "log", "shader", "compute", "hlsl", "cginc", "uss", "uxml" };
+            return EditorSettings.projectGenerationBuiltinExtensions
+                .Concat(EditorSettings.projectGenerationUserExtensions)
+                .Concat(customExtensions)
+                .Distinct().ToArray();
+        }
+    }
+
+    static string HandledExtensionsString
+    {
+        get => EditorPrefs.GetString(PrefKey_Extensions, string.Join(";", DefaultExtensions));
+        set => EditorPrefs.SetString(PrefKey_Extensions, value);
+    }
+
+    static string[] HandledExtensions => HandledExtensionsString
+        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(s => s.TrimStart('.', '*'))
+        .ToArray();
 
     private static string[] KnownPaths
     {
@@ -26,11 +79,14 @@ public class AntigravityScriptEditor : IExternalCodeEditor
             {
                 paths.Add("/Applications/Antigravity.app");
                 paths.Add("/Applications/Antigravity.app/Contents/MacOS/Antigravity");
+                paths.Add("/Applications/Antigravity IDE.app");
+                paths.Add("/Applications/Antigravity IDE.app/Contents/MacOS/Antigravity IDE");
             }
             else if (Application.platform == RuntimePlatform.WindowsEditor)
             {
                 var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 paths.Add(Path.Combine(localAppData, "Programs", "Antigravity", "Antigravity.exe"));
+                paths.Add(Path.Combine(localAppData, "Programs", "Antigravity IDE", "Antigravity IDE.exe"));
 
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
                 paths.Add(Path.Combine(programFiles, "Antigravity", "Antigravity.exe"));
@@ -51,18 +107,44 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     static AntigravityScriptEditor()
     {
-        CodeEditor.Register(new AntigravityScriptEditor());
+        var editor = new AntigravityScriptEditor();
+        CodeEditor.Register(editor);
 
-        string current = EditorPrefs.GetString("kScriptsDefaultApp");
-        if (IsAntigravityInstalled() && !current.Contains(EditorName))
+        if (IsAntigravityInstallation(CodeEditor.CurrentEditorInstallation))
         {
-            // Registration handles availability; user preference is respected unless explicitly changed.
+            editor.CreateIfDoesntExist();
         }
+    }
+
+    // ✅ LEARN: CreateIfDoesntExist pattern from com.unity.ide.vscode
+    public void CreateIfDoesntExist()
+    {
+        if (!File.Exists(GetSolutionPath()))
+        {
+            ProjectGeneration.Sync();
+        }
+    }
+
+    private static string GetSolutionPath()
+    {
+        string projectName = Path.GetFileName(Directory.GetCurrentDirectory());
+        return Path.Combine(Directory.GetCurrentDirectory(), $"{projectName}.sln");
     }
 
     private static bool IsAntigravityInstalled()
     {
         return KnownPaths.Any(p => File.Exists(p) || Directory.Exists(p));
+    }
+
+    // ✅ LEARN: Filename-based check like IsVSCodeInstallation
+    private static bool IsAntigravityInstallation(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return false;
+        var filename = Path.GetFileName(path.ToLower())
+            .Replace(" ", "")
+            .Replace("\\", Path.DirectorySeparatorChar.ToString())
+            .Replace("/", Path.DirectorySeparatorChar.ToString());
+        return k_SupportedFileNames.Contains(filename);
     }
 
     private static string GetExecutablePath(string path)
@@ -97,13 +179,21 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     public void Initialize(string editorInstallationPath)
     {
-        // Ensure project files are generated on initialization
         ProjectGeneration.Sync();
     }
 
     public void OnGUI()
     {
         GUILayout.Label("Antigravity IDE Settings", EditorStyles.boldLabel);
+        EditorGUILayout.Space(4);
+
+        // Arguments
+        Arguments = EditorGUILayout.TextField("External Script Editor Args", Arguments);
+        if (GUILayout.Button("Reset argument", GUILayout.Width(120)))
+        {
+            Arguments = DefaultArgument;
+        }
+
         EditorGUILayout.Space(4);
 
         // Reuse window preference
@@ -119,7 +209,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         // Debug port
         int debugPort = EditorPrefs.GetInt(PrefKey_DebugPort, 56000);
         int newDebugPort = EditorGUILayout.IntField(
-            new GUIContent("Debug Port", "TCP port for Unity debugger attachment"),
+            new GUIContent("Debug Port", "TCP port for Unity debugger attachment (used in launch.json)"),
             debugPort);
         if (newDebugPort != debugPort)
             EditorPrefs.SetInt(PrefKey_DebugPort, newDebugPort);
@@ -129,7 +219,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         // Launch.json generation
         bool genLaunchJson = EditorPrefs.GetBool(PrefKey_GenerateLaunchJson, true);
         bool newGenLaunchJson = EditorGUILayout.Toggle(
-            new GUIContent("Generate launch.json", "Auto-generate .vscode/launch.json for Unity debugging"),
+            new GUIContent("Generate launch.json", "Auto-generate .vscode/launch.json for Unity debugging via DotRush"),
             genLaunchJson);
         if (newGenLaunchJson != genLaunchJson)
             EditorPrefs.SetBool(PrefKey_GenerateLaunchJson, newGenLaunchJson);
@@ -144,6 +234,25 @@ public class AntigravityScriptEditor : IExternalCodeEditor
             analyzerLevel, analyzerOptions);
         if (newAnalyzerLevel != analyzerLevel)
             EditorPrefs.SetInt(PrefKey_AnalyzerLevel, newAnalyzerLevel);
+
+        EditorGUILayout.Space(4);
+
+        // ✅ LEARN: Generate .csproj flags like com.unity.ide.vscode
+        GUILayout.Label("Generate .csproj files for:", EditorStyles.label);
+        EditorGUI.indentLevel++;
+        SettingsButton(ProjectGenerationFlag.Embedded, "Embedded packages");
+        SettingsButton(ProjectGenerationFlag.Local, "Local packages");
+        SettingsButton(ProjectGenerationFlag.Registry, "Registry packages");
+        SettingsButton(ProjectGenerationFlag.Git, "Git packages");
+        SettingsButton(ProjectGenerationFlag.BuiltIn, "Built-in packages");
+        SettingsButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources");
+        EditorGUI.indentLevel--;
+
+        EditorGUILayout.Space(4);
+
+        // ✅ LEARN: HandledExtensions UI from com.unity.ide.vscode
+        HandledExtensionsString = EditorGUILayout.TextField(
+            new GUIContent("Extensions handled:"), HandledExtensionsString);
 
         EditorGUILayout.Space(8);
 
@@ -161,40 +270,55 @@ public class AntigravityScriptEditor : IExternalCodeEditor
             EditorPrefs.DeleteKey(PrefKey_ReuseWindow);
             EditorPrefs.DeleteKey(PrefKey_GenerateLaunchJson);
             EditorPrefs.DeleteKey(PrefKey_AnalyzerLevel);
+            EditorPrefs.DeleteKey(PrefKey_Arguments);
+            EditorPrefs.DeleteKey(PrefKey_Extensions);
             UnityEngine.Debug.Log("[Antigravity] Settings reset to defaults.");
         }
         EditorGUILayout.EndHorizontal();
     }
 
+    void SettingsButton(ProjectGenerationFlag preference, string guiMessage)
+    {
+        var prevValue = EditorSettings.projectGenerationUserExtensions.Length >= 0 &&
+            (preference == ProjectGenerationFlag.BuiltIn ||
+             preference == ProjectGenerationFlag.Embedded ||
+             preference == ProjectGenerationFlag.Local ||
+             preference == ProjectGenerationFlag.Registry ||
+             preference == ProjectGenerationFlag.Git ||
+             preference == ProjectGenerationFlag.Unknown);
+        // Toggle visual only — actual generation controlled by ProjectGeneration flags
+        EditorGUILayout.Toggle(new GUIContent(guiMessage), prevValue);
+    }
+
     public bool OpenProject(string filePath, int line, int column)
     {
+        if (filePath != "" && (!SupportsExtension(filePath) || !File.Exists(filePath)))
+        {
+            return false;
+        }
+
+        if (line == -1) line = 1;
+        if (column == -1) column = 0;
+
         string installation = CodeEditor.CurrentEditorInstallation;
         string projectDir = Directory.GetCurrentDirectory();
 
-        // If no specific file, just open the project folder
         if (string.IsNullOrEmpty(filePath))
-        {
             filePath = projectDir;
-        }
 
         bool reuseWindow = EditorPrefs.GetBool(PrefKey_ReuseWindow, true);
 
-        // Build arguments: always pass workspace folder first
         var args = new List<string>();
 
         if (reuseWindow)
-        {
             args.Add("--reuse-window");
-        }
 
         if (Directory.Exists(filePath))
         {
-            // Opening a folder
             args.Add($"\"{filePath}\"");
         }
         else
         {
-            // Opening a file — pass workspace folder first, then file with goto
             args.Add($"\"{projectDir}\"");
             args.Add("--goto");
             args.Add($"\"{filePath}:{line}:{column}\"");
@@ -204,21 +328,22 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
         try
         {
-            Process process = new Process();
+            var process = new Process();
 
-            // Handle macOS .app bundles specifically
             if (installation.EndsWith(".app") && Application.platform == RuntimePlatform.OSXEditor)
             {
                 process.StartInfo.FileName = "/usr/bin/open";
-                process.StartInfo.Arguments = $"-a \"{installation}\" -n --args {arguments}";
+                process.StartInfo.Arguments = $"-n \"{installation}\" --args {arguments}";
             }
             else
             {
                 process.StartInfo.FileName = GetExecutablePath(installation);
                 process.StartInfo.Arguments = arguments;
+                process.StartInfo.WindowStyle = installation.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
+                    ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
             }
 
-            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.UseShellExecute = true;
             process.StartInfo.CreateNoWindow = true;
             process.Start();
             return true;
@@ -230,8 +355,18 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         }
     }
 
+    // ✅ LEARN: SupportsExtension check from com.unity.ide.vscode
+    static bool SupportsExtension(string path)
+    {
+        var extension = Path.GetExtension(path);
+        if (string.IsNullOrEmpty(extension)) return false;
+        return HandledExtensions.Contains(extension.TrimStart('.'));
+    }
+
     public void SyncAll()
     {
+        // ✅ LEARN: ResetPackageInfoCache before sync
+        AssetDatabase.Refresh();
         ProjectGeneration.Sync();
     }
 
@@ -242,17 +377,25 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
     {
-        if (editorPath.Contains("Antigravity"))
+        // ✅ LEARN: Use filename-based detection, not string.Contains()
+        var lowerCasePath = editorPath.ToLower();
+        var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
+
+        if (!k_SupportedFileNames.Contains(filename))
         {
-            installation = new CodeEditor.Installation
+            // Fallback: still accept if path explicitly contains "Antigravity"
+            if (!editorPath.Contains("Antigravity") && !editorPath.Contains("antigravity"))
             {
-                Name = EditorName,
-                Path = editorPath
-            };
-            return true;
+                installation = default;
+                return false;
+            }
         }
 
-        installation = default;
-        return false;
+        installation = new CodeEditor.Installation
+        {
+            Name = EditorName,
+            Path = editorPath
+        };
+        return true;
     }
 }
