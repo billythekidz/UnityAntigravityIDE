@@ -114,6 +114,9 @@ public static class ProjectGeneration
             .Select(g => g.First())
             .ToArray();
 
+        // Clean up orphaned .csproj files from removed assemblies
+        CleanOrphanedProjectFiles(assemblies);
+
         foreach (var assembly in assemblies)
         {
             GenerateCsproj(assembly);
@@ -122,11 +125,37 @@ public static class ProjectGeneration
         WriteVSCodeSettingsFiles();
         GenerateDirectoryBuildProps();
 
-        // ✅ LEARN: AssetPostprocessor callback from com.unity.ide.vscode
         OnGeneratedCSProjectFiles();
 
         Profiler.EndSample();
         Debug.Log("[Antigravity] Project files synchronized.");
+    }
+
+    /// <summary>
+    /// Removes .csproj files that no longer correspond to any active assembly.
+    /// Prevents stale project files from confusing IDEs after asmdef renames/deletes.
+    /// </summary>
+    private static void CleanOrphanedProjectFiles(Assembly[] activeAssemblies)
+    {
+        string projectDir = Directory.GetCurrentDirectory();
+        var activeNames = new HashSet<string>(activeAssemblies.Select(a => a.name), StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            foreach (var csproj in Directory.GetFiles(projectDir, "*.csproj"))
+            {
+                string name = Path.GetFileNameWithoutExtension(csproj);
+                if (!activeNames.Contains(name))
+                {
+                    File.Delete(csproj);
+                    Debug.Log($"[Antigravity] Removed orphaned project file: {name}.csproj");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Antigravity] Failed to clean orphaned files: {ex.Message}");
+        }
     }
 
     public static void SyncIfNeeded(string[] addedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, string[] importedAssets)
