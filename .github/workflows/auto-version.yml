@@ -3,11 +3,6 @@ name: Auto Bump Version
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '.github/**'
-      - '**.md'
-      - 'docs/**'
-      - '**.vsix'
 
 permissions:
   contents: write
@@ -15,11 +10,12 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    # Skip if the commit was made by this action (prevents infinite loop)
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Need full history to compare and push
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -34,11 +30,9 @@ jobs:
         id: bump
         run: |
           CURRENT="${{ steps.current.outputs.version }}"
-          # Split into major.minor.patch
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
           PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-          # Update package.json
           jq --arg v "$NEW_VERSION" '.version = $v' package.json > package.tmp.json
           mv package.tmp.json package.json
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -49,5 +43,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
+          git diff --staged --quiet && echo "No changes" && exit 0
           git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
           git push
