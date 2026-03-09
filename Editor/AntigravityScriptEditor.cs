@@ -237,15 +237,14 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
         EditorGUILayout.Space(4);
 
-        // ✅ LEARN: Generate .csproj flags like com.unity.ide.vscode
+        // Generate .csproj flags (always enabled — we sync all packages)
         GUILayout.Label("Generate .csproj files for:", EditorStyles.label);
         EditorGUI.indentLevel++;
-        SettingsButton(ProjectGenerationFlag.Embedded, "Embedded packages");
-        SettingsButton(ProjectGenerationFlag.Local, "Local packages");
-        SettingsButton(ProjectGenerationFlag.Registry, "Registry packages");
-        SettingsButton(ProjectGenerationFlag.Git, "Git packages");
-        SettingsButton(ProjectGenerationFlag.BuiltIn, "Built-in packages");
-        SettingsButton(ProjectGenerationFlag.Unknown, "Packages from unknown sources");
+        EditorGUILayout.Toggle(new GUIContent("Embedded packages"), true);
+        EditorGUILayout.Toggle(new GUIContent("Local packages"), true);
+        EditorGUILayout.Toggle(new GUIContent("Registry packages"), true);
+        EditorGUILayout.Toggle(new GUIContent("Git packages"), true);
+        EditorGUILayout.Toggle(new GUIContent("Built-in packages"), true);
         EditorGUI.indentLevel--;
 
         EditorGUILayout.Space(4);
@@ -277,18 +276,6 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         EditorGUILayout.EndHorizontal();
     }
 
-    void SettingsButton(ProjectGenerationFlag preference, string guiMessage)
-    {
-        var prevValue = EditorSettings.projectGenerationUserExtensions.Length >= 0 &&
-            (preference == ProjectGenerationFlag.BuiltIn ||
-             preference == ProjectGenerationFlag.Embedded ||
-             preference == ProjectGenerationFlag.Local ||
-             preference == ProjectGenerationFlag.Registry ||
-             preference == ProjectGenerationFlag.Git ||
-             preference == ProjectGenerationFlag.Unknown);
-        // Toggle visual only — actual generation controlled by ProjectGeneration flags
-        EditorGUILayout.Toggle(new GUIContent(guiMessage), prevValue);
-    }
 
     public bool OpenProject(string filePath, int line, int column)
     {
