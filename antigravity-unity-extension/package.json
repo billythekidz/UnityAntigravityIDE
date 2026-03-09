@@ -2,7 +2,7 @@
     "name": "antigravity-unity",
     "displayName": "Antigravity Unity",
     "description": "Unity development support for Antigravity IDE — syntax highlighting, IntelliSense, snippets, and project tools. Works with DotRush for C# and Unity debugging.",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "publisher": "antigravity",
     "engines": {
         "vscode": "^1.80.0"
@@ -22,7 +22,8 @@
     "activationEvents": [
         "workspaceContains:**/*.unity",
         "workspaceContains:Assets/",
-        "workspaceContains:ProjectSettings/"
+        "workspaceContains:ProjectSettings/",
+        "onDebug"
     ],
     "main": "./out/extension.js",
     "extensionDependencies": [],
@@ -42,6 +43,14 @@
                 "command": "antigravity-unity.regenerateProjectFiles",
                 "title": "Regenerate Project Files",
                 "category": "Antigravity"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "csharp"
+            },
+            {
+                "language": "shaderlab"
             }
         ],
         "languages": [

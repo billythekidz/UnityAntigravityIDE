@@ -275,27 +275,26 @@ public static class UnityDebugBridge
             Directory.CreateDirectory(vscodeDir);
         }
 
-        // Update launch.json with active bridge port
+        // Generate launch.json using DotRush's "unity" debugger type
+        // EditorInstance.json path is used by vscode-unity-debug pattern for multi-instance discovery
+        string editorInstancePath = "${workspaceFolder}/Library/EditorInstance.json";
         string launchPath = Path.Combine(vscodeDir, "launch.json");
         string launchContent = $@"{{
     ""version"": ""0.2.0"",
     ""configurations"": [
         {{
             ""name"": ""Attach to Unity Editor"",
-            ""type"": ""vstuc"",
-            ""request"": ""attach""
+            ""type"": ""unity"",
+            ""request"": ""attach"",
+            ""path"": ""{editorInstancePath}""
         }},
         {{
             ""name"": ""Attach to Unity Player"",
-            ""type"": ""vstuc"",
+            ""type"": ""unity"",
             ""request"": ""attach"",
-            ""endPoint"": ""127.0.0.1:{bridgePort}""
-        }},
-        {{
-            ""name"": ""Antigravity: Unity Debug Bridge"",
-            ""type"": ""antigravity-unity"",
-            ""request"": ""attach"",
-            ""port"": {bridgePort}
+            ""transportArgs"": {{
+                ""port"": {bridgePort}
+            }}
         }}
     ]
 }}";
