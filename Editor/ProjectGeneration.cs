@@ -105,8 +105,8 @@ public static class ProjectGeneration
     public static void Sync()
     {
         Profiler.BeginSample("AntigravityProjectSync");
-        // Get ALL assemblies: Player + Editor (packages often have editor-only assemblies)
-        var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.PlayerWithoutTestAssemblies);
+        // Get ALL assemblies: Player (includes tests) + Editor
+        var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Player);
         var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
         var assemblies = playerAssemblies
             .Concat(editorAssemblies)
