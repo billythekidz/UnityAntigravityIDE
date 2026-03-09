@@ -1,23 +1,34 @@
 {
     "name": "antigravity-unity",
     "displayName": "Antigravity Unity",
-    "description": "Unity development support for Antigravity IDE — syntax highlighting, IntelliSense, snippets, and project tools. Works with DotRush for C# and Unity debugging.",
+    "description": "Fast and lightweight alternative to Unity extension for VS Code. C# IntelliSense via DotRush, Unity debugging, ShaderLab, HLSL, and optimized .csproj generation.",
     "version": "1.2.0",
     "publisher": "antigravity",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/billythekidz/UnityAntigravityIDE"
+    },
     "engines": {
         "vscode": "^1.80.0"
     },
     "categories": [
         "Programming Languages",
-        "Snippets"
+        "Snippets",
+        "Other"
     ],
     "keywords": [
         "unity",
+        "unity3d",
+        "csharp",
+        "c#",
+        "intellisense",
         "game development",
+        "game-dev",
+        "dotrush",
+        "roslyn",
         "shaderlab",
         "hlsl",
-        "uxml",
-        "uss"
+        "unity-debug"
     ],
     "activationEvents": [
         "workspaceContains:**/*.unity",
