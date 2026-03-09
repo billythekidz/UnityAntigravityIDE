@@ -1,75 +1,144 @@
-# Antigravity IDE Support for Unity
+# Antigravity Unity IDE Support
 
-*Note: This repository is a fork of [prithvi-bharadwaj/Antigravity-IDE](https://github.com/prithvi-bharadwaj/Antigravity-IDE).*
+Full-featured Unity integration for Antigravity IDE — IntelliSense, debugging, Roslyn analyzers, and optimized project generation.
 
-Full-featured integration for **Antigravity IDE** as an external script editor for Unity, providing IntelliSense, debugging, Roslyn analyzers, and seamless project file generation.
+## ✨ Features
 
-## Features
+### 🎯 Smart Project Generation
+- **Optimized for speed**: Only generates `.csproj` for user-editable assemblies (Assets/ + local Packages/), skipping read-only package internals. Typical Unity projects drop from ~155 to ~10-15 project files.
+- **Auto-cleanup**: Removes orphaned `.csproj` and competing `.slnx` files automatically
+- **DotRush-compatible references**: Emits both `<Reference>` with `<HintPath>` (for Roslyn type resolution) and `<ProjectReference>` (for IDE navigation)
+- **Response file support**: Parses `.rsp` files for defines, references, and unsafe flags
+- **Non-script assets**: Includes `.uxml`, `.uss`, `.shader`, `.asmdef` as `<None>` items for navigation
 
-### Core
-- **Auto-Discovery**: Automatically detects Antigravity installation on macOS, Windows, and Linux.
-- **Smart Opening**: Opens files at specific lines and columns with workspace-first arguments.
-- **Reuse Window**: Opens files in existing Antigravity window via `--reuse-window` flag.
+### 🧠 C# IntelliSense (via DotRush)
+- Full IntelliSense, autocomplete, and error checking powered by Roslyn
+- Supports all Unity assemblies including `UnityEngine.UI`, `TextMeshPro`, etc.
+- Fast startup: filtered solution loads in seconds, not minutes
+- Auto-install: prompts to install DotRush on first activation if not present
 
-### IntelliSense & Project Generation
-- Generates `.csproj` and `.sln` files with proper `LangVersion` (C# 8/9/10 based on Unity version).
-- Includes `DefineConstants` from Unity scripting defines and platform symbols.
-- Discovers and includes Roslyn analyzer references from Unity packages.
-- Generates `Directory.Build.props` for analyzer configuration.
-- Smart sync — only regenerates when `.cs` or `.asmdef` files change.
+### 🎨 Syntax Highlighting
+- **ShaderLab** (`.shader`)
+- **HLSL/CG** (`.cginc`, `.hlsl`, `.cg`, `.compute`)
+- **USS** — Unity Style Sheets (`.uss`)
+- **UXML** — Unity XML (`.uxml`)
+- **Assembly Definitions** (`.asmdef`, `.asmref`)
 
-### Debugging
-- **Debug Bridge**: TCP-based debug server inside Unity Editor (menu: `Antigravity > Start Debug Bridge`).
-- Auto-generates `.vscode/launch.json` with Unity debugger configurations.
-- Supports attaching to Unity Editor and standalone Players.
-- Remote commands: play, pause, stop, and debug info queries.
+### 🔧 Unity Project Tools
+- `Antigravity: Regenerate Project Files` — regenerate all `.csproj` and `.sln` from Unity
+- `Antigravity: Attach Unity Debugger` — attach to running Unity instance
+- `Antigravity: Unity API Reference` — quick access to Unity docs
+- Unity C# code snippets (MonoBehaviour methods, attributes, etc.)
 
-### Analyzer Configuration
-- Generates `.editorconfig` with Unity-appropriate diagnostic suppressions.
-- Suppresses false positives for Unity API messages (`Start`, `Update`, `OnCollisionEnter`, etc.).
-- Configurable analyzer levels: None, Default, Recommended, All.
-- Menu: `Antigravity > Generate Analyzer Config`.
+---
 
-### Preferences GUI
-Access via **Unity > Preferences > External Tools** (select Antigravity):
-- **Reuse Window** — toggle reuse vs new window behavior
-- **Debug Port** — configure TCP port for debug bridge
-- **Generate launch.json** — auto-generate debug configs
-- **Analyzer Level** — set Roslyn diagnostic severity
-- **Regenerate / Reset** buttons
+## 📦 Installation
 
-## Installation
+### Unity Package (required)
+Add to your Unity project's `Packages/manifest.json`:
 
-### via Package Manager (Git URL)
-1. Open Unity (2021.3 or later).
-2. Go to **Window > Package Manager**.
-3. Click **+** > **Add package from git URL...**.
-4. Enter: `https://github.com/billythekidz/UnityAntigravityIDE.git`
+```json
+{
+  "dependencies": {
+    "com.antigravity.ide": "https://github.com/billythekidz/UnityAntigravityIDE.git"
+  }
+}
+```
 
-### via Disk
-1. Open **Window > Package Manager**.
-2. Click **+** > **Add package from disk...**.
-3. Select the `package.json` file in this folder.
+Or use Unity Package Manager → Add package from git URL:
+```
+https://github.com/billythekidz/UnityAntigravityIDE.git
+```
 
-## Usage
+### Antigravity/VS Code Extension
+Install the VSIX from the `antigravity-unity-extension~/` folder:
+1. Open Antigravity IDE / VS Code
+2. `Ctrl+Shift+P` → "Extensions: Install from VSIX..."
+3. Select `antigravity-unity-1.2.0.vsix`
 
-1. Go to **Unity > Preferences > External Tools**.
-2. Select **Antigravity** as External Script Editor.
-3. (Optional) Start the debug bridge via **Antigravity > Start Debug Bridge**.
-4. (Optional) Generate analyzer config via **Antigravity > Generate Analyzer Config**.
+### DotRush (auto-installed)
+DotRush provides C# IntelliSense and debugging. It will be **prompted for installation automatically** when the Antigravity Unity extension activates.
 
-## Submodules (Reference)
+Manual install: Search "DotRush" in the extensions marketplace or install `nromanov.dotrush`.
 
-| Submodule | Purpose |
-|---|---|
-| `vscode-csharp` | C# extension source — reference for language server integration |
-| `vscode-dotnettools` | C# Dev Kit issue tracker — reference for feature parity |
+---
 
-## Requirements
-- Unity 2021.3 LTS or later
-- Antigravity IDE installed
+## 🚀 Quick Start
 
-## Troubleshooting
-- **Editor not found**: The package checks common installation paths. If installed elsewhere, browse and select the executable manually.
-- **No IntelliSense**: Click **Regenerate Project Files** in Preferences, or ensure `.csproj` files are generated.
-- **Debug bridge fails**: Check if the configured port is available (default: 56000).
+1. **Install the Unity package** (see above)
+2. **Open your Unity project in Antigravity IDE**
+3. **Install DotRush** when prompted (or manually)
+4. In Unity Editor: **Edit → Preferences → External Tools → External Script Editor → Antigravity IDE**
+5. Click **"Regenerate project files"** in the Antigravity IDE preferences panel
+6. Done! IntelliSense, debugging, and syntax highlighting are ready.
+
+---
+
+## ⚡ Performance
+
+### Before (standard approach)
+- ~155 `.csproj` files for a typical Unity project
+- Roslyn loads ALL assemblies including read-only packages
+- Load time: **30-60 seconds**
+
+### After (Antigravity optimized)
+- ~10-15 `.csproj` files (user-editable only)
+- Package types resolved via DLL HintPaths (no source parsing needed)
+- Load time: **2-5 seconds** ⚡
+
+---
+
+## 🏗️ Architecture
+
+```
+UnityAntigravityIDE/
+├── Editor/                          # Unity Editor scripts (the UPM package)
+│   ├── AntigravityScriptEditor.cs   # IDE integration, preferences UI
+│   ├── ProjectGeneration.cs         # .csproj/.sln generation engine
+│   ├── UnityAnalyzerConfig.cs       # Roslyn analyzer configuration
+│   └── UnityDebugBridge.cs          # Debug bridge for Unity
+├── package.json                     # UPM package manifest
+├── .githooks/                       # Local git hooks
+│   └── bump-version.ps1             # Auto-increment patch version on push
+├── antigravity-unity-extension~/    # VS Code extension (local dev only)
+├── DotRush~/                        # DotRush reference (local dev only)
+├── com.unity.ide.vscode~/           # VS Code IDE reference (local dev only)
+└── vscode-unity-debug~/             # Unity debugger reference (local dev only)
+```
+
+> **Note**: Folders ending with `~` are ignored by Unity Package Manager and are not tracked in git (dev-only references).
+
+---
+
+## 🔧 Configuration
+
+### `.vscode/settings.json` (auto-generated)
+```json
+{
+  "dotnet.defaultSolution": "YourProject.sln",
+  "dotrush.roslyn.projectOrSolutionFiles": ["path/to/YourProject.sln"],
+  "dotrush.msbuildProperties": {
+    "DefineConstants": "UNITY_EDITOR"
+  }
+}
+```
+
+### Unity Preferences
+- **External Script Editor**: Antigravity IDE
+- **Editor arguments**: customizable in preferences
+- **Generate .csproj**: automatic on script/asset changes
+
+---
+
+## 📝 Versioning
+
+Version is auto-incremented via a local git pre-push hook:
+- Patch bumps on every push (e.g., `2.1.7` → `2.1.8`)
+- Uses `.githooks/bump-version.ps1`
+- Set up: `git config core.hooksPath .githooks`
+
+---
+
+## 📄 License
+
+MIT
