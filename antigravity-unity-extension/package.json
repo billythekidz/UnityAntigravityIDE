@@ -1,14 +1,13 @@
 {
     "name": "antigravity-unity",
     "displayName": "Antigravity Unity",
-    "description": "Unity development support for Antigravity IDE — debugger, syntax highlighting, IntelliSense, and project tools.",
-    "version": "1.0.0",
+    "description": "Unity development support for Antigravity IDE — syntax highlighting, IntelliSense, snippets, and project tools. Works with DotRush for C# and Unity debugging.",
+    "version": "1.1.0",
     "publisher": "antigravity",
     "engines": {
         "vscode": "^1.80.0"
     },
     "categories": [
-        "Debuggers",
         "Programming Languages",
         "Snippets"
     ],
@@ -26,6 +25,7 @@
         "workspaceContains:ProjectSettings/"
     ],
     "main": "./out/extension.js",
+    "extensionDependencies": [],
     "contributes": {
         "commands": [
             {
@@ -42,53 +42,6 @@
                 "command": "antigravity-unity.regenerateProjectFiles",
                 "title": "Regenerate Project Files",
                 "category": "Antigravity"
-            }
-        ],
-        "debuggers": [
-            {
-                "type": "antigravity-unity",
-                "label": "Antigravity Unity Debugger",
-                "languages": [
-                    "csharp"
-                ],
-                "configurationAttributes": {
-                    "attach": {
-                        "required": [],
-                        "properties": {
-                            "port": {
-                                "type": "number",
-                                "description": "Debug bridge port (default: 56000)",
-                                "default": 56000
-                            },
-                            "endPoint": {
-                                "type": "string",
-                                "description": "IP:Port of the Unity player to debug",
-                                "default": "127.0.0.1:56000"
-                            }
-                        }
-                    }
-                },
-                "configurationSnippets": [
-                    {
-                        "label": "Antigravity: Attach to Unity Editor",
-                        "description": "Attach the debugger to the Unity Editor",
-                        "body": {
-                            "name": "Attach to Unity Editor",
-                            "type": "antigravity-unity",
-                            "request": "attach"
-                        }
-                    },
-                    {
-                        "label": "Antigravity: Attach to Unity Player",
-                        "description": "Attach the debugger to a Unity Player",
-                        "body": {
-                            "name": "Attach to Unity Player",
-                            "type": "antigravity-unity",
-                            "request": "attach",
-                            "endPoint": "127.0.0.1:56000"
-                        }
-                    }
-                ]
             }
         ],
         "languages": [
@@ -195,8 +148,5 @@
         "@types/node": "^18.0.0",
         "@types/vscode": "^1.80.0",
         "typescript": "^5.0.0"
-    },
-    "dependencies": {
-        "@vscode/debugadapter": "^1.65.0"
     }
 }
