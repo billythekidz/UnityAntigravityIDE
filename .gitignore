@@ -1,0 +1,16 @@
+# Reference submodules (keep local only, not on GitHub)
+DotRush~/
+com.unity.ide.vscode~/
+vscode-unity-debug~/
+
+# VS Code extension source (local dev only)
+antigravity-unity-extension~/
+
+# Docs (local only)
+docs~/
+
+# VSIX build outputs
+extensions-vsix~/
+
+# Build artifacts
+*.vsix
