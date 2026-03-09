@@ -1,3 +1,6 @@
+# Secrets (tokens, keys — NEVER commit)
+.secrets/
+
 # Reference submodules (keep local only, not on GitHub)
 DotRush~/
 com.unity.ide.vscode~/
