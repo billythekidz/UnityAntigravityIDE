@@ -105,7 +105,15 @@ public static class ProjectGeneration
     public static void Sync()
     {
         Profiler.BeginSample("AntigravityProjectSync");
-        var assemblies = CompilationPipeline.GetAssemblies();
+        // Get ALL assemblies: Player + Editor (packages often have editor-only assemblies)
+        var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.PlayerWithoutTestAssemblies);
+        var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
+        var assemblies = playerAssemblies
+            .Concat(editorAssemblies)
+            .GroupBy(a => a.name)
+            .Select(g => g.First())
+            .ToArray();
+
         foreach (var assembly in assemblies)
         {
             GenerateCsproj(assembly);

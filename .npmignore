@@ -1,0 +1,22 @@
+# Exclude reference submodules — these are for development only, not part of the Unity package
+vscode-unity-debug/
+com.unity.ide.vscode/
+DotRush/
+
+# Exclude VS Code extension source
+antigravity-unity-extension/
+
+# Exclude docs and tools
+docs/
+extensions-vsix/
+pack-vsix.ps1
+
+# Exclude git files
+.github/
+.gitmodules
+
+# Exclude non-Unity files
+*.vsix
+*.md
+*.txt
+!CHANGELOG.md

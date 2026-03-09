@@ -1,9 +1,9 @@
-[submodule "DotRush"]
-	path = DotRush
+[submodule "DotRush~"]
+	path = DotRush~
 	url = https://github.com/JaneySprings/DotRush.git
-[submodule "com.unity.ide.vscode"]
-	path = com.unity.ide.vscode
+[submodule "com.unity.ide.vscode~"]
+	path = com.unity.ide.vscode~
 	url = https://github.com/Unity-Technologies/com.unity.ide.vscode.git
-[submodule "vscode-unity-debug"]
-	path = vscode-unity-debug
+[submodule "vscode-unity-debug~"]
+	path = vscode-unity-debug~
 	url = https://github.com/Unity-Technologies/vscode-unity-debug.git
