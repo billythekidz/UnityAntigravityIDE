@@ -1,0 +1,6 @@
+[submodule "vscode-csharp"]
+	path = vscode-csharp
+	url = https://github.com/dotnet/vscode-csharp
+[submodule "vscode-dotnettools"]
+	path = vscode-dotnettools
+	url = https://github.com/microsoft/vscode-dotnettools

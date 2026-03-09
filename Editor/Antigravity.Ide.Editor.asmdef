@@ -1,6 +1,8 @@
 {
     "name": "Antigravity.Ide.Editor",
-    "references": [],
+    "references": [
+        "Unity.CodeEditor"
+    ],
     "includePlatforms": [
         "Editor"
     ],

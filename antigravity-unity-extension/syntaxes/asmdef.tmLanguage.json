@@ -1,0 +1,23 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Assembly Definition",
+    "scopeName": "source.json.asmdef",
+    "patterns": [
+        {
+            "include": "source.json"
+        },
+        {
+            "include": "#asmdef-keys"
+        }
+    ],
+    "repository": {
+        "asmdef-keys": {
+            "patterns": [
+                {
+                    "name": "support.type.property-name.asmdef",
+                    "match": "\"(name|rootNamespace|references|includePlatforms|excludePlatforms|allowUnsafeCode|overrideReferences|precompiledReferences|autoReferenced|defineConstraints|versionDefines|noEngineReferences|expression|define)\"\\s*:"
+                }
+            ]
+        }
+    }
+}

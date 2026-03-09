@@ -1,0 +1,79 @@
+{
+    "comments": {
+        "lineComment": "//",
+        "blockComment": [
+            "/*",
+            "*/"
+        ]
+    },
+    "brackets": [
+        [
+            "{",
+            "}"
+        ],
+        [
+            "[",
+            "]"
+        ],
+        [
+            "(",
+            ")"
+        ]
+    ],
+    "autoClosingPairs": [
+        {
+            "open": "{",
+            "close": "}"
+        },
+        {
+            "open": "[",
+            "close": "]"
+        },
+        {
+            "open": "(",
+            "close": ")"
+        },
+        {
+            "open": "\"",
+            "close": "\"",
+            "notIn": [
+                "string"
+            ]
+        },
+        {
+            "open": "/*",
+            "close": "*/",
+            "notIn": [
+                "string"
+            ]
+        }
+    ],
+    "surroundingPairs": [
+        [
+            "{",
+            "}"
+        ],
+        [
+            "[",
+            "]"
+        ],
+        [
+            "(",
+            ")"
+        ],
+        [
+            "\"",
+            "\""
+        ]
+    ],
+    "folding": {
+        "markers": {
+            "start": "^\\s*(Shader|SubShader|Pass|Properties|CGPROGRAM|HLSLPROGRAM|CGINCLUDE|HLSLINCLUDE)\\b|\\{",
+            "end": "^\\s*(ENDCG|ENDHLSL)\\b|\\}"
+        }
+    },
+    "indentationRules": {
+        "increaseIndentPattern": "^.*\\{[^}]*$",
+        "decreaseIndentPattern": "^\\s*\\}"
+    }
+}

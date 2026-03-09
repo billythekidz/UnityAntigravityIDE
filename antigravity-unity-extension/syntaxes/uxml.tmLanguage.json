@@ -1,0 +1,116 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Unity XML",
+    "scopeName": "text.xml.uxml",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#processing-instructions"
+        },
+        {
+            "include": "#tags"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.block.xml.uxml",
+                    "begin": "<!--",
+                    "end": "-->"
+                }
+            ]
+        },
+        "processing-instructions": {
+            "patterns": [
+                {
+                    "name": "meta.tag.preprocessor.xml.uxml",
+                    "begin": "<\\?",
+                    "end": "\\?>",
+                    "patterns": [
+                        {
+                            "include": "#attributes"
+                        }
+                    ]
+                }
+            ]
+        },
+        "tags": {
+            "patterns": [
+                {
+                    "name": "meta.tag.xml.uxml",
+                    "begin": "(</?)(ui:|engine:|editor:)?([a-zA-Z][a-zA-Z0-9]*)",
+                    "beginCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.tag.xml.uxml"
+                        },
+                        "2": {
+                            "name": "entity.name.tag.namespace.xml.uxml"
+                        },
+                        "3": {
+                            "name": "entity.name.tag.localname.xml.uxml"
+                        }
+                    },
+                    "end": "(/?>)",
+                    "endCaptures": {
+                        "1": {
+                            "name": "punctuation.definition.tag.xml.uxml"
+                        }
+                    },
+                    "patterns": [
+                        {
+                            "include": "#unity-elements"
+                        },
+                        {
+                            "include": "#attributes"
+                        }
+                    ]
+                }
+            ]
+        },
+        "unity-elements": {
+            "patterns": [
+                {
+                    "name": "support.class.unity.uxml",
+                    "match": "\\b(UXML|VisualElement|Box|Button|Label|TextField|Toggle|Slider|SliderInt|MinMaxSlider|Foldout|ScrollView|ListView|TreeView|DropdownField|EnumField|RadioButton|RadioButtonGroup|GroupBox|HelpBox|ProgressBar|Image|Scroller|RepeatButton|TemplateContainer|BindableElement|IMGUIContainer|Template|Instance|Style)\\b"
+                }
+            ]
+        },
+        "attributes": {
+            "patterns": [
+                {
+                    "name": "entity.other.attribute-name.xml.uxml",
+                    "match": "\\b(name|class|style|tooltip|focusable|tabindex|view-data-key|picking-mode|usage-hints|binding-path|text|value|label|src|path|type|xmlns|xsi)\\b"
+                },
+                {
+                    "name": "entity.other.attribute-name.uxml",
+                    "match": "\\b[a-zA-Z_][a-zA-Z0-9_-]*(?==)"
+                },
+                {
+                    "name": "string.quoted.double.xml.uxml",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.entity.xml.uxml",
+                            "match": "&[a-zA-Z]+;"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.xml.uxml",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.entity.xml.uxml",
+                            "match": "&[a-zA-Z]+;"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

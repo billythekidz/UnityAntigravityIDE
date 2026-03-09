@@ -1,0 +1,202 @@
+{
+    "name": "antigravity-unity",
+    "displayName": "Antigravity Unity",
+    "description": "Unity development support for Antigravity IDE — debugger, syntax highlighting, IntelliSense, and project tools.",
+    "version": "1.0.0",
+    "publisher": "antigravity",
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Debuggers",
+        "Programming Languages",
+        "Snippets"
+    ],
+    "keywords": [
+        "unity",
+        "game development",
+        "shaderlab",
+        "hlsl",
+        "uxml",
+        "uss"
+    ],
+    "activationEvents": [
+        "workspaceContains:**/*.unity",
+        "workspaceContains:Assets/",
+        "workspaceContains:ProjectSettings/"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "antigravity-unity.attachDebugger",
+                "title": "Attach Unity Debugger",
+                "category": "Antigravity"
+            },
+            {
+                "command": "antigravity-unity.openApiReference",
+                "title": "Unity API Reference",
+                "category": "Antigravity"
+            },
+            {
+                "command": "antigravity-unity.regenerateProjectFiles",
+                "title": "Regenerate Project Files",
+                "category": "Antigravity"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "antigravity-unity",
+                "label": "Antigravity Unity Debugger",
+                "languages": [
+                    "csharp"
+                ],
+                "configurationAttributes": {
+                    "attach": {
+                        "required": [],
+                        "properties": {
+                            "port": {
+                                "type": "number",
+                                "description": "Debug bridge port (default: 56000)",
+                                "default": 56000
+                            },
+                            "endPoint": {
+                                "type": "string",
+                                "description": "IP:Port of the Unity player to debug",
+                                "default": "127.0.0.1:56000"
+                            }
+                        }
+                    }
+                },
+                "configurationSnippets": [
+                    {
+                        "label": "Antigravity: Attach to Unity Editor",
+                        "description": "Attach the debugger to the Unity Editor",
+                        "body": {
+                            "name": "Attach to Unity Editor",
+                            "type": "antigravity-unity",
+                            "request": "attach"
+                        }
+                    },
+                    {
+                        "label": "Antigravity: Attach to Unity Player",
+                        "description": "Attach the debugger to a Unity Player",
+                        "body": {
+                            "name": "Attach to Unity Player",
+                            "type": "antigravity-unity",
+                            "request": "attach",
+                            "endPoint": "127.0.0.1:56000"
+                        }
+                    }
+                ]
+            }
+        ],
+        "languages": [
+            {
+                "id": "shaderlab",
+                "aliases": [
+                    "ShaderLab",
+                    "Unity Shader"
+                ],
+                "extensions": [
+                    ".shader"
+                ],
+                "configuration": "./language-configuration/shaderlab.language-configuration.json"
+            },
+            {
+                "id": "hlsl",
+                "aliases": [
+                    "HLSL",
+                    "CG"
+                ],
+                "extensions": [
+                    ".cginc",
+                    ".hlsl",
+                    ".cg",
+                    ".compute"
+                ],
+                "configuration": "./language-configuration/hlsl.language-configuration.json"
+            },
+            {
+                "id": "uss",
+                "aliases": [
+                    "Unity Style Sheet",
+                    "USS"
+                ],
+                "extensions": [
+                    ".uss"
+                ],
+                "configuration": "./language-configuration/uss.language-configuration.json"
+            },
+            {
+                "id": "uxml",
+                "aliases": [
+                    "Unity XML",
+                    "UXML"
+                ],
+                "extensions": [
+                    ".uxml"
+                ],
+                "configuration": "./language-configuration/uxml.language-configuration.json"
+            },
+            {
+                "id": "asmdef",
+                "aliases": [
+                    "Assembly Definition",
+                    "asmdef"
+                ],
+                "extensions": [
+                    ".asmdef",
+                    ".asmref"
+                ],
+                "configuration": "./language-configuration/asmdef.language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "shaderlab",
+                "scopeName": "source.shaderlab",
+                "path": "./syntaxes/shaderlab.tmLanguage.json"
+            },
+            {
+                "language": "hlsl",
+                "scopeName": "source.hlsl",
+                "path": "./syntaxes/hlsl.tmLanguage.json"
+            },
+            {
+                "language": "uss",
+                "scopeName": "source.uss",
+                "path": "./syntaxes/uss.tmLanguage.json"
+            },
+            {
+                "language": "uxml",
+                "scopeName": "text.xml.uxml",
+                "path": "./syntaxes/uxml.tmLanguage.json"
+            },
+            {
+                "language": "asmdef",
+                "scopeName": "source.json.asmdef",
+                "path": "./syntaxes/asmdef.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "csharp",
+                "path": "./snippets/unity-csharp.json"
+            }
+        ]
+    },
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@types/vscode": "^1.80.0",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@vscode/debugadapter": "^1.65.0"
+    }
+}

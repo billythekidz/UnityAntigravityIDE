@@ -1,0 +1,145 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "HLSL",
+    "scopeName": "source.hlsl",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#preprocessor"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#functions"
+        },
+        {
+            "include": "#semantics"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#strings"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.hlsl",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.hlsl",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "preprocessor": {
+            "patterns": [
+                {
+                    "name": "meta.preprocessor.hlsl",
+                    "match": "^\\s*#\\s*(pragma|include|define|undef|if|ifdef|ifndef|else|elif|endif|error|warning|line)\\b.*$"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.hlsl",
+                    "match": "\\b(if|else|for|while|do|switch|case|default|break|continue|return|discard)\\b"
+                },
+                {
+                    "name": "storage.type.hlsl",
+                    "match": "\\b(struct|cbuffer|tbuffer|void|typedef)\\b"
+                },
+                {
+                    "name": "storage.modifier.hlsl",
+                    "match": "\\b(uniform|static|const|inline|volatile|extern|in|out|inout|groupshared|nointerpolation|centroid|noperspective|sample|precise|globallycoherent)\\b"
+                }
+            ]
+        },
+        "types": {
+            "patterns": [
+                {
+                    "name": "support.type.hlsl",
+                    "match": "\\b(float[1-4]?|half[1-4]?|fixed[1-4]?|double[1-4]?|int[1-4]?|uint[1-4]?|bool[1-4]?|min16float[1-4]?|min10float[1-4]?|min16int[1-4]?|min12int[1-4]?|min16uint[1-4]?)\\b"
+                },
+                {
+                    "name": "support.type.matrix.hlsl",
+                    "match": "\\b(float|half|int|uint|bool|double)[2-4]x[2-4]\\b"
+                },
+                {
+                    "name": "support.type.texture.hlsl",
+                    "match": "\\b(sampler2D|sampler3D|samplerCUBE|SamplerState|SamplerComparisonState|Texture1D|Texture1DArray|Texture2D|Texture2DArray|Texture2DMS|Texture2DMSArray|Texture3D|TextureCube|TextureCubeArray|RWTexture1D|RWTexture1DArray|RWTexture2D|RWTexture2DArray|RWTexture3D)\\b"
+                },
+                {
+                    "name": "support.type.buffer.hlsl",
+                    "match": "\\b(Buffer|StructuredBuffer|RWStructuredBuffer|AppendStructuredBuffer|ConsumeStructuredBuffer|ByteAddressBuffer|RWByteAddressBuffer)\\b"
+                }
+            ]
+        },
+        "functions": {
+            "patterns": [
+                {
+                    "name": "support.function.hlsl",
+                    "match": "\\b(abs|acos|all|any|asin|atan|atan2|ceil|clamp|clip|cos|cosh|countbits|cross|ddx|ddx_coarse|ddx_fine|ddy|ddy_coarse|ddy_fine|degrees|determinant|distance|dot|dst|exp|exp2|faceforward|firstbithigh|firstbitlow|floor|fma|fmod|frac|frexp|fwidth|isfinite|isinf|isnan|ldexp|length|lerp|lit|log|log10|log2|mad|max|min|modf|mul|noise|normalize|pow|radians|rcp|reflect|refract|reversebits|round|rsqrt|saturate|sign|sin|sincos|sinh|smoothstep|sqrt|step|tan|tanh|tex1D|tex1Dbias|tex1Dgrad|tex1Dlod|tex1Dproj|tex2D|tex2Dbias|tex2Dgrad|tex2Dlod|tex2Dproj|tex3D|tex3Dbias|tex3Dgrad|tex3Dlod|tex3Dproj|texCUBE|texCUBEbias|texCUBEgrad|texCUBElod|texCUBEproj|transpose|trunc)\\b"
+                }
+            ]
+        },
+        "semantics": {
+            "patterns": [
+                {
+                    "name": "support.variable.semantic.hlsl",
+                    "match": ":\\s*(SV_POSITION|SV_TARGET[0-7]?|SV_Target[0-7]?|SV_Depth|SV_InstanceID|SV_VertexID|SV_PrimitiveID|SV_IsFrontFace|SV_SampleIndex|SV_Coverage|SV_ClipDistance[0-1]?|SV_CullDistance[0-1]?|SV_DispatchThreadID|SV_GroupID|SV_GroupIndex|SV_GroupThreadID|POSITION[0-1]?|COLOR[0-1]?|TEXCOORD[0-9]?|NORMAL[0-1]?|TANGENT|BINORMAL|BLENDWEIGHT|BLENDINDICES|PSIZE|TESSFACTOR|VFACE|VPOS|DEPTH)\\b"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.hlsl",
+                    "match": "\\b0[xX][0-9a-fA-F]+[uU]?\\b"
+                },
+                {
+                    "name": "constant.numeric.float.hlsl",
+                    "match": "\\b[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?[fFhH]?\\b"
+                },
+                {
+                    "name": "constant.numeric.float.hlsl",
+                    "match": "\\b\\.[0-9]+([eE][+-]?[0-9]+)?[fFhH]?\\b"
+                },
+                {
+                    "name": "constant.numeric.integer.hlsl",
+                    "match": "\\b[0-9]+[uU]?\\b"
+                },
+                {
+                    "name": "constant.language.hlsl",
+                    "match": "\\b(true|false)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.hlsl",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.hlsl",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

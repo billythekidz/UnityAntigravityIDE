@@ -1,0 +1,247 @@
+{
+    "MonoBehaviour class": {
+        "prefix": "mono",
+        "body": [
+            "using UnityEngine;",
+            "",
+            "public class ${1:${TM_FILENAME_BASE}} : MonoBehaviour",
+            "{",
+            "    private void Start()",
+            "    {",
+            "        $0",
+            "    }",
+            "",
+            "    private void Update()",
+            "    {",
+            "        ",
+            "    }",
+            "}"
+        ],
+        "description": "Unity MonoBehaviour class template"
+    },
+    "ScriptableObject class": {
+        "prefix": "scriptobj",
+        "body": [
+            "using UnityEngine;",
+            "",
+            "[CreateAssetMenu(fileName = \"${1:New${2:Asset}}\", menuName = \"${3:Custom}/${2:Asset}\")]",
+            "public class ${TM_FILENAME_BASE} : ScriptableObject",
+            "{",
+            "    $0",
+            "}"
+        ],
+        "description": "Unity ScriptableObject class with CreateAssetMenu"
+    },
+    "Editor class": {
+        "prefix": "editor",
+        "body": [
+            "using UnityEditor;",
+            "using UnityEngine;",
+            "",
+            "[CustomEditor(typeof(${1:TargetComponent}))]",
+            "public class ${TM_FILENAME_BASE} : Editor",
+            "{",
+            "    public override void OnInspectorGUI()",
+            "    {",
+            "        base.OnInspectorGUI();",
+            "        $0",
+            "    }",
+            "}"
+        ],
+        "description": "Unity Custom Editor class"
+    },
+    "EditorWindow class": {
+        "prefix": "editorwindow",
+        "body": [
+            "using UnityEditor;",
+            "using UnityEngine;",
+            "",
+            "public class ${TM_FILENAME_BASE} : EditorWindow",
+            "{",
+            "    [MenuItem(\"Window/${1:Custom}/${2:${TM_FILENAME_BASE}}\")]",
+            "    public static void ShowWindow()",
+            "    {",
+            "        GetWindow<${TM_FILENAME_BASE}>(\"${2:${TM_FILENAME_BASE}}\");",
+            "    }",
+            "",
+            "    private void OnGUI()",
+            "    {",
+            "        $0",
+            "    }",
+            "}"
+        ],
+        "description": "Unity EditorWindow class with MenuItem"
+    },
+    "PropertyDrawer class": {
+        "prefix": "propdrawer",
+        "body": [
+            "using UnityEditor;",
+            "using UnityEngine;",
+            "",
+            "[CustomPropertyDrawer(typeof(${1:TargetAttribute}))]",
+            "public class ${TM_FILENAME_BASE} : PropertyDrawer",
+            "{",
+            "    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)",
+            "    {",
+            "        EditorGUI.BeginProperty(position, label, property);",
+            "        $0",
+            "        EditorGUI.EndProperty();",
+            "    }",
+            "}"
+        ],
+        "description": "Unity PropertyDrawer class"
+    },
+    "SerializeField": {
+        "prefix": "sfield",
+        "body": "[SerializeField] private ${1:int} ${2:fieldName};",
+        "description": "[SerializeField] private field"
+    },
+    "Header attribute": {
+        "prefix": "header",
+        "body": "[Header(\"${1:Section Name}\")]",
+        "description": "Unity Header attribute"
+    },
+    "Tooltip attribute": {
+        "prefix": "tooltip",
+        "body": "[Tooltip(\"${1:Description}\")]",
+        "description": "Unity Tooltip attribute"
+    },
+    "Range attribute": {
+        "prefix": "range",
+        "body": "[Range(${1:0}, ${2:1})]",
+        "description": "Unity Range attribute"
+    },
+    "RequireComponent": {
+        "prefix": "reqcomp",
+        "body": "[RequireComponent(typeof(${1:Rigidbody}))]",
+        "description": "Unity RequireComponent attribute"
+    },
+    "Coroutine": {
+        "prefix": "coroutine",
+        "body": [
+            "private System.Collections.IEnumerator ${1:CoroutineName}()",
+            "{",
+            "    $0",
+            "    yield return null;",
+            "}"
+        ],
+        "description": "Unity Coroutine method"
+    },
+    "Start Coroutine": {
+        "prefix": "startcoroutine",
+        "body": "StartCoroutine(${1:CoroutineName}());",
+        "description": "Start a coroutine"
+    },
+    "Debug.Log": {
+        "prefix": "dlog",
+        "body": "Debug.Log($\"${1:message}\");",
+        "description": "Debug.Log with interpolated string"
+    },
+    "Debug.LogWarning": {
+        "prefix": "dlogw",
+        "body": "Debug.LogWarning($\"${1:message}\");",
+        "description": "Debug.LogWarning with interpolated string"
+    },
+    "Debug.LogError": {
+        "prefix": "dloge",
+        "body": "Debug.LogError($\"${1:message}\");",
+        "description": "Debug.LogError with interpolated string"
+    },
+    "GetComponent": {
+        "prefix": "getcomp",
+        "body": "GetComponent<${1:Component}>()",
+        "description": "GetComponent<T>()"
+    },
+    "TryGetComponent": {
+        "prefix": "trygetcomp",
+        "body": [
+            "if (TryGetComponent<${1:Component}>(out var ${2:component}))",
+            "{",
+            "    $0",
+            "}"
+        ],
+        "description": "TryGetComponent<T>() with if block"
+    },
+    "Instantiate": {
+        "prefix": "instantiate",
+        "body": "Instantiate(${1:prefab}, ${2:position}, ${3:Quaternion.identity});",
+        "description": "Instantiate with position and rotation"
+    },
+    "OnCollisionEnter": {
+        "prefix": "oncollision",
+        "body": [
+            "private void OnCollisionEnter(Collision collision)",
+            "{",
+            "    $0",
+            "}"
+        ],
+        "description": "OnCollisionEnter callback"
+    },
+    "OnTriggerEnter": {
+        "prefix": "ontrigger",
+        "body": [
+            "private void OnTriggerEnter(Collider other)",
+            "{",
+            "    $0",
+            "}"
+        ],
+        "description": "OnTriggerEnter callback"
+    },
+    "NetworkBehaviour class": {
+        "prefix": "netbehaviour",
+        "body": [
+            "using UnityEngine;",
+            "using Unity.Netcode;",
+            "",
+            "public class ${TM_FILENAME_BASE} : NetworkBehaviour",
+            "{",
+            "    public override void OnNetworkSpawn()",
+            "    {",
+            "        base.OnNetworkSpawn();",
+            "        $0",
+            "    }",
+            "}"
+        ],
+        "description": "Unity NetworkBehaviour class template"
+    },
+    "Singleton pattern": {
+        "prefix": "singleton",
+        "body": [
+            "public static ${TM_FILENAME_BASE} Instance { get; private set; }",
+            "",
+            "private void Awake()",
+            "{",
+            "    if (Instance != null && Instance != this)",
+            "    {",
+            "        Destroy(gameObject);",
+            "        return;",
+            "    }",
+            "    Instance = this;",
+            "    DontDestroyOnLoad(gameObject);",
+            "}"
+        ],
+        "description": "Unity Singleton pattern"
+    },
+    "Async operation": {
+        "prefix": "asyncop",
+        "body": [
+            "private async System.Threading.Tasks.Task ${1:OperationName}Async()",
+            "{",
+            "    $0",
+            "    await System.Threading.Tasks.Task.Yield();",
+            "}"
+        ],
+        "description": "Async Task method for Unity"
+    },
+    "MenuItem": {
+        "prefix": "menuitem",
+        "body": [
+            "[MenuItem(\"${1:Tools}/${2:Action}\")]",
+            "private static void ${3:DoAction}()",
+            "{",
+            "    $0",
+            "}"
+        ],
+        "description": "Unity MenuItem with static method"
+    }
+}

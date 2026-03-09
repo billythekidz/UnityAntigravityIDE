@@ -1,0 +1,122 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "ShaderLab",
+    "scopeName": "source.shaderlab",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#shader-block"
+        },
+        {
+            "include": "#strings"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.shaderlab",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.shaderlab",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "shader-block": {
+            "patterns": [
+                {
+                    "name": "keyword.declaration.shader.shaderlab",
+                    "match": "\\b(Shader)\\b"
+                },
+                {
+                    "name": "keyword.declaration.subshader.shaderlab",
+                    "match": "\\b(SubShader)\\b"
+                },
+                {
+                    "name": "keyword.declaration.pass.shaderlab",
+                    "match": "\\b(Pass|UsePass|GrabPass)\\b"
+                },
+                {
+                    "name": "keyword.declaration.properties.shaderlab",
+                    "match": "\\b(Properties)\\b"
+                },
+                {
+                    "name": "keyword.declaration.category.shaderlab",
+                    "match": "\\b(Category)\\b"
+                },
+                {
+                    "name": "keyword.declaration.fallback.shaderlab",
+                    "match": "\\b(Fallback)\\b"
+                },
+                {
+                    "name": "keyword.declaration.customeditor.shaderlab",
+                    "match": "\\b(CustomEditor)\\b"
+                },
+                {
+                    "name": "keyword.command.shaderlab",
+                    "match": "\\b(Tags|LOD|Blend|BlendOp|AlphaToMask|ColorMask|Cull|ZTest|ZWrite|Offset|Stencil|Fog|Lighting|Material|SeparateSpecular|Color|AmbientAndDiffuse|Emission|Specular|Shininess|SetTexture)\\b"
+                },
+                {
+                    "name": "keyword.type.shaderlab",
+                    "match": "\\b(Float|Int|Range|Color|Vector|2D|3D|Cube|CubeArray|2DArray)\\b"
+                },
+                {
+                    "name": "keyword.pragma.shaderlab",
+                    "match": "^\\s*#\\s*(pragma|include|define|undef|if|ifdef|ifndef|else|elif|endif|error|warning)\\b"
+                },
+                {
+                    "name": "keyword.cg.shaderlab",
+                    "match": "\\b(CGPROGRAM|CGINCLUDE|ENDCG|HLSLPROGRAM|HLSLINCLUDE|ENDHLSL)\\b"
+                },
+                {
+                    "name": "keyword.hlsl.type.shaderlab",
+                    "match": "\\b(float[1-4]?|half[1-4]?|fixed[1-4]?|int[1-4]?|uint[1-4]?|bool[1-4]?|float[2-4]x[2-4]|half[2-4]x[2-4]|sampler2D|sampler3D|samplerCUBE|SamplerState|Texture2D|Texture3D|TextureCube|Texture2DArray|RWTexture2D|StructuredBuffer|RWStructuredBuffer|AppendStructuredBuffer|ConsumeStructuredBuffer|ByteAddressBuffer|RWByteAddressBuffer)\\b"
+                },
+                {
+                    "name": "keyword.hlsl.function.shaderlab",
+                    "match": "\\b(void|return|if|else|for|while|do|switch|case|break|continue|discard|struct|cbuffer|tbuffer|register|packoffset)\\b"
+                },
+                {
+                    "name": "keyword.hlsl.semantic.shaderlab",
+                    "match": ":\\s*(SV_POSITION|SV_TARGET[0-7]?|SV_Target[0-7]?|SV_Depth|SV_InstanceID|SV_VertexID|SV_PrimitiveID|SV_IsFrontFace|POSITION|COLOR[0-1]?|TEXCOORD[0-9]?|NORMAL|TANGENT|BINORMAL|BLENDWEIGHT|BLENDINDICES|VFACE|VPOS)\\b"
+                },
+                {
+                    "name": "keyword.hlsl.builtin.shaderlab",
+                    "match": "\\b(mul|dot|cross|normalize|length|saturate|clamp|lerp|step|smoothstep|abs|min|max|pow|exp|exp2|log|log2|sqrt|rsqrt|floor|ceil|round|frac|fmod|sin|cos|tan|asin|acos|atan|atan2|tex2D|tex2Dlod|tex2Dgrad|tex2Dproj|texCUBE|texCUBElod|clip|ddx|ddy|fwidth|all|any|sign|reflect|refract|distance|degrees|radians)\\b"
+                },
+                {
+                    "name": "keyword.unity.builtin.shaderlab",
+                    "match": "\\b(_Time|_SinTime|_CosTime|unity_DeltaTime|_ProjectionParams|_ScreenParams|_ZBufferParams|unity_OrthoParams|unity_CameraProjection|unity_CameraInvProjection|unity_CameraWorldClipPlanes|_WorldSpaceCameraPos|_WorldSpaceLightPos0|_LightColor0|unity_LightColor|unity_4LightPosX0|unity_4LightPosY0|unity_4LightPosZ0|unity_4LightAtten0|unity_LightPosition|unity_ObjectToWorld|unity_WorldToObject|UNITY_MATRIX_MVP|UNITY_MATRIX_MV|UNITY_MATRIX_V|UNITY_MATRIX_P|UNITY_MATRIX_VP|UNITY_MATRIX_T_MV|UNITY_MATRIX_IT_MV)\\b"
+                },
+                {
+                    "name": "constant.numeric.shaderlab",
+                    "match": "\\b[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?[fFhH]?\\b"
+                },
+                {
+                    "name": "storage.modifier.shaderlab",
+                    "match": "\\b(uniform|static|const|inline|in|out|inout|groupshared|nointerpolation|centroid|noperspective|sample)\\b"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.shaderlab",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.shaderlab",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

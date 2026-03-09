@@ -1,0 +1,104 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Unity Style Sheet",
+    "scopeName": "source.uss",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#selectors"
+        },
+        {
+            "include": "#properties"
+        },
+        {
+            "include": "#values"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.block.uss",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "selectors": {
+            "patterns": [
+                {
+                    "name": "entity.name.tag.uss",
+                    "match": "\\b(VisualElement|Box|Button|Label|TextField|Toggle|Slider|SliderInt|MinMaxSlider|Foldout|ScrollView|ListView|TreeView|DropdownField|EnumField|RadioButton|RadioButtonGroup|GroupBox|HelpBox|ProgressBar|Image|Scroller|RepeatButton|PopupWindow|TemplateContainer|BindableElement|IMGUIContainer)\\b"
+                },
+                {
+                    "name": "entity.other.attribute-name.class.uss",
+                    "match": "\\.[a-zA-Z_][a-zA-Z0-9_-]*"
+                },
+                {
+                    "name": "entity.other.attribute-name.id.uss",
+                    "match": "#[a-zA-Z_][a-zA-Z0-9_-]*"
+                },
+                {
+                    "name": "entity.other.attribute-name.pseudo-class.uss",
+                    "match": ":(hover|active|inactive|focus|selected|disabled|enabled|checked|root)"
+                },
+                {
+                    "name": "keyword.operator.combinator.uss",
+                    "match": "\\s*(>)\\s*"
+                }
+            ]
+        },
+        "properties": {
+            "patterns": [
+                {
+                    "name": "support.type.property-name.uss",
+                    "match": "\\b(align-content|align-items|align-self|background-color|background-image|background-position|background-position-x|background-position-y|background-repeat|background-size|border-bottom-color|border-bottom-left-radius|border-bottom-right-radius|border-bottom-width|border-color|border-left-color|border-left-width|border-radius|border-right-color|border-right-width|border-top-color|border-top-left-radius|border-top-right-radius|border-top-width|border-width|bottom|color|cursor|display|flex|flex-basis|flex-direction|flex-grow|flex-shrink|flex-wrap|font-size|height|justify-content|left|letter-spacing|margin|margin-bottom|margin-left|margin-right|margin-top|max-height|max-width|min-height|min-width|opacity|overflow|padding|padding-bottom|padding-left|padding-right|padding-top|position|right|rotate|scale|text-overflow|text-shadow|top|transform-origin|transition|transition-delay|transition-duration|transition-property|transition-timing-function|translate|-unity-background-image-tint-color|-unity-background-scale-mode|-unity-font|-unity-font-definition|-unity-font-style|-unity-overflow-clip-box|-unity-paragraph-spacing|-unity-slice-bottom|-unity-slice-left|-unity-slice-right|-unity-slice-scale|-unity-slice-top|-unity-text-align|-unity-text-outline|-unity-text-outline-color|-unity-text-outline-width|-unity-text-overflow-position|visibility|white-space|width|word-spacing)\\b"
+                }
+            ]
+        },
+        "values": {
+            "patterns": [
+                {
+                    "name": "support.constant.property-value.uss",
+                    "match": "\\b(auto|none|flex|column|column-reverse|row|row-reverse|wrap|nowrap|wrap-reverse|flex-start|flex-end|center|stretch|baseline|space-between|space-around|space-evenly|absolute|relative|hidden|visible|scroll|initial|bold|italic|normal|upper-left|upper-center|upper-right|middle-left|middle-center|middle-right|lower-left|lower-center|lower-right|clip|ellipsis)\\b"
+                },
+                {
+                    "name": "constant.numeric.uss",
+                    "match": "-?[0-9]+(\\.[0-9]+)?(px|%|em|rem|vw|vh|vmin|vmax|deg|rad|turn|s|ms)?"
+                },
+                {
+                    "name": "support.function.uss",
+                    "match": "\\b(rgb|rgba|url|resource|var|env|calc|rotate|scale|translate)\\b"
+                },
+                {
+                    "name": "constant.other.color.hex.uss",
+                    "match": "#[0-9a-fA-F]{3,8}\\b"
+                },
+                {
+                    "name": "string.quoted.double.uss",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.uss",
+                            "match": "\\\\."
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.uss",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.uss",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
