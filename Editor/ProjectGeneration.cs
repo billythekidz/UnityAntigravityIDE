@@ -235,15 +235,47 @@ public static class ProjectGeneration
         // Response file extra references/defines
         AppendResponseFileReferences(sb, assembly);
 
-        // Project references
+        // Project references + DLL HintPath for DotRush compatibility
+        // DotRush (Roslyn-based) needs <Reference> with <HintPath> to resolve types.
+        // Pure <ProjectReference> alone is not enough — Roslyn can't build Unity .csproj.
+        // We emit BOTH: Reference (for IDE type resolution) + ProjectReference (for navigation).
         if (assembly.assemblyReferences.Length > 0)
         {
+            string projectDir = Directory.GetCurrentDirectory();
+            string scriptAssembliesDir = Path.Combine(projectDir, "Library", "ScriptAssemblies");
+
+            // First: add Reference+HintPath for assemblies that have compiled DLLs
+            var refsWithDll = new List<(string name, string dllPath)>();
+            foreach (var refAssembly in assembly.assemblyReferences)
+            {
+                string dllPath = Path.Combine(scriptAssembliesDir, $"{refAssembly.name}.dll");
+                if (File.Exists(dllPath))
+                {
+                    refsWithDll.Add((refAssembly.name, dllPath));
+                }
+            }
+
+            if (refsWithDll.Count > 0)
+            {
+                sb.AppendLine("  <ItemGroup>");
+                foreach (var (name, dllPath) in refsWithDll)
+                {
+                    sb.AppendLine($"    <Reference Include=\"{name}\">");
+                    sb.AppendLine($"        <HintPath>{dllPath.Replace("\\", "/")}</HintPath>");
+                    sb.AppendLine("        <Private>false</Private>");
+                    sb.AppendLine("    </Reference>");
+                }
+                sb.AppendLine("  </ItemGroup>");
+            }
+
+            // Second: keep ProjectReference for IDE navigation (Go to Definition across projects)
             sb.AppendLine("  <ItemGroup>");
             foreach (var refAssembly in assembly.assemblyReferences)
             {
                 sb.AppendLine($"    <ProjectReference Include=\"{refAssembly.name}.csproj\">");
                 sb.AppendLine($"      <Project>{{{GenerateGuid(refAssembly.name)}}}</Project>");
                 sb.AppendLine($"      <Name>{refAssembly.name}</Name>");
+                sb.AppendLine($"      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>");
                 sb.AppendLine("    </ProjectReference>");
             }
             sb.AppendLine("  </ItemGroup>");
