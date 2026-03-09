@@ -129,6 +129,7 @@ public static class ProjectGeneration
             GenerateCsproj(assembly);
         }
         GenerateSolution(userAssemblies);
+        CleanCompetingSolutionFiles();
         WriteVSCodeSettingsFiles();
         GenerateDirectoryBuildProps();
 
@@ -196,6 +197,27 @@ public static class ProjectGeneration
         catch (Exception ex)
         {
             Debug.LogWarning($"[Antigravity] Failed to clean orphaned files: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes .slnx files that compete with our .sln.
+    /// DotRush shows a picker dialog when multiple solution files exist.
+    /// </summary>
+    private static void CleanCompetingSolutionFiles()
+    {
+        string projectDir = Directory.GetCurrentDirectory();
+        try
+        {
+            foreach (var slnx in Directory.GetFiles(projectDir, "*.slnx"))
+            {
+                File.Delete(slnx);
+                Debug.Log($"[Antigravity] Removed competing solution file: {Path.GetFileName(slnx)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Antigravity] Failed to clean .slnx files: {ex.Message}");
         }
     }
 
