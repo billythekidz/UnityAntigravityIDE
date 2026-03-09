@@ -94,6 +94,14 @@ public static class ProjectGeneration
 
     private static readonly string[] k_ReimportSyncExtensions = { ".dll", ".asmdef", ".asmref" };
 
+    // Non-script asset extensions to include as <None Include> for IDE navigation
+    private static readonly string[] k_NonScriptAssetExtensions =
+    {
+        ".uxml", ".uss", ".shader", ".cginc", ".hlsl", ".compute",
+        ".asmdef", ".asmref", ".json", ".xml", ".yaml", ".txt",
+        ".md", ".inputactions"
+    };
+
     public static void Sync()
     {
         Profiler.BeginSample("AntigravityProjectSync");
@@ -219,6 +227,13 @@ public static class ProjectGeneration
             sb.AppendLine($"    <Compile Include=\"{sourceFile.Replace("\\", "/")}\" />");
         }
         sb.AppendLine("  </ItemGroup>");
+
+        // Non-script assets: .uxml, .uss, .shader, .asmdef, etc.
+        // These let IDEs and DotRush navigate/index non-C# Unity files
+        AppendNonScriptAssets(sb, assembly);
+
+        // Response file extra references/defines
+        AppendResponseFileReferences(sb, assembly);
 
         // Project references
         if (assembly.assemblyReferences.Length > 0)
@@ -397,9 +412,192 @@ public static class ProjectGeneration
         // Add active build target scripting defines
         defines.AddRange(EditorUserBuildSettings.activeScriptCompilationDefines);
 
+        // Merge any extra defines from response files
+        var rspData = ParseResponseFiles(assembly);
+        defines.AddRange(rspData.Defines);
+
         return string.Join(";", new[] { "DEBUG", "TRACE" }
             .Concat(defines)
             .Distinct());
+    }
+
+    // -- Response File Parsing ------------------------------------------
+
+    private struct ResponseFileData
+    {
+        public List<string> Defines;
+        public List<string> References;
+        public bool Unsafe;
+    }
+
+    /// <summary>
+    /// Parses .rsp response files listed in assembly.compilerOptions.ResponseFiles.
+    /// Extracts -define:, -r:, and -unsafe flags exactly like the official
+    /// com.unity.ide.vscode ProjectGeneration does.
+    /// </summary>
+    private static ResponseFileData ParseResponseFiles(Assembly assembly)
+    {
+        var result = new ResponseFileData
+        {
+            Defines = new List<string>(),
+            References = new List<string>(),
+            Unsafe = false
+        };
+
+        string projectDir = Directory.GetCurrentDirectory();
+
+        // Unity stores response file names in compilerOptions.ResponseFiles
+        // Falls back to scanning Assets/ for csc.rsp / mcs.rsp
+        var rspFiles = new List<string>();
+
+        if (assembly.compilerOptions.ResponseFiles != null)
+        {
+            foreach (var rsp in assembly.compilerOptions.ResponseFiles)
+            {
+                string fullPath = Path.IsPathRooted(rsp)
+                    ? rsp
+                    : Path.GetFullPath(Path.Combine(projectDir, rsp));
+                if (File.Exists(fullPath))
+                    rspFiles.Add(fullPath);
+            }
+        }
+
+        // Legacy: always check Assets/csc.rsp and Assets/mcs.rsp
+        foreach (var legacyName in new[] { "csc.rsp", "mcs.rsp" })
+        {
+            string legacyPath = Path.Combine(projectDir, "Assets", legacyName);
+            if (File.Exists(legacyPath) && !rspFiles.Contains(legacyPath))
+                rspFiles.Add(legacyPath);
+        }
+
+        foreach (var rspFile in rspFiles)
+        {
+            try
+            {
+                foreach (var rawLine in File.ReadAllLines(rspFile))
+                {
+                    string line = rawLine.Trim();
+                    if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                        continue;
+
+                    // -define:SYMBOL1;SYMBOL2 or -d:SYMBOL
+                    if (line.StartsWith("-define:") || line.StartsWith("-d:"))
+                    {
+                        string value = line.Substring(line.IndexOf(':') + 1);
+                        result.Defines.AddRange(value.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries));
+                    }
+                    // -r:path/to/assembly.dll or -reference:...
+                    else if (line.StartsWith("-r:") || line.StartsWith("-reference:"))
+                    {
+                        string value = line.Substring(line.IndexOf(':') + 1).Trim('"');
+                        result.References.Add(value);
+                    }
+                    // -unsafe
+                    else if (line == "-unsafe" || line == "/unsafe")
+                    {
+                        result.Unsafe = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Antigravity] Failed to parse response file {rspFile}: {ex.Message}");
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Appends extra DLL references found in response files that are not
+    /// already in assembly.compiledAssemblyReferences.
+    /// </summary>
+    private static void AppendResponseFileReferences(StringBuilder sb, Assembly assembly)
+    {
+        var rspData = ParseResponseFiles(assembly);
+        if (rspData.References.Count == 0) return;
+
+        var existingRefs = new HashSet<string>(
+            assembly.compiledAssemblyReferences.Select(Path.GetFileNameWithoutExtension),
+            StringComparer.OrdinalIgnoreCase);
+
+        var extraRefs = rspData.References
+            .Where(r => !existingRefs.Contains(Path.GetFileNameWithoutExtension(r)))
+            .ToList();
+
+        if (extraRefs.Count == 0) return;
+
+        sb.AppendLine("  <ItemGroup>");
+        foreach (var refPath in extraRefs)
+        {
+            sb.AppendLine($"    <Reference Include=\"{Path.GetFileNameWithoutExtension(refPath)}\">");
+            sb.AppendLine($"        <HintPath>{refPath.Replace("\\", "/")}</HintPath>");
+            sb.AppendLine("    </Reference>");
+        }
+        sb.AppendLine("  </ItemGroup>");
+    }
+
+    // -- Non-script Asset Inclusion -------------------------------------
+
+    /// <summary>
+    /// Adds non-script Unity assets (shaders, uxml, uss, asmdef, etc.) as
+    /// &lt;None Include&gt; items so IDEs can navigate them in the project tree
+    /// and DotRush can syntax-check them.
+    /// Only adds assets that belong to the same output folder as the assembly.
+    /// </summary>
+    private static void AppendNonScriptAssets(StringBuilder sb, Assembly assembly)
+    {
+        // Determine the root folders this assembly covers
+        // (inferred from where its source files live)
+        var assemblyRoots = assembly.sourceFiles
+            .Select(f => GetTopLevelFolder(f))
+            .Where(f => !string.IsNullOrEmpty(f))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (assemblyRoots.Count == 0) return;
+
+        var nonScriptItems = new List<string>();
+
+        try
+        {
+            // Use AssetDatabase to enumerate all project assets
+            foreach (var assetPath in AssetDatabase.GetAllAssetPaths())
+            {
+                string ext = Path.GetExtension(assetPath);
+                if (string.IsNullOrEmpty(ext)) continue;
+                if (!k_NonScriptAssetExtensions.Any(e => string.Equals(e, ext, StringComparison.OrdinalIgnoreCase))) continue;
+
+                // Only include assets under one of this assembly's root folders
+                string topFolder = GetTopLevelFolder(assetPath);
+                if (!assemblyRoots.Contains(topFolder)) continue;
+
+                string fullPath = Path.GetFullPath(assetPath).Replace("\\", "/");
+                nonScriptItems.Add(fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Antigravity] Failed to enumerate non-script assets: {ex.Message}");
+        }
+
+        if (nonScriptItems.Count == 0) return;
+
+        sb.AppendLine("  <ItemGroup>");
+        foreach (var item in nonScriptItems)
+        {
+            sb.AppendLine($"    <None Include=\"{item}\" />");
+        }
+        sb.AppendLine("  </ItemGroup>");
+    }
+
+    /// <summary>Returns the top-level folder segment of an asset path (e.g. "Assets" or "Packages").</summary>
+    private static string GetTopLevelFolder(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
+        // path is like "Assets/MyFolder/..." or "Packages/com.x/..."
+        int slash = path.IndexOfAny(new[] { '/', '\\' });
+        return slash >= 0 ? path.Substring(0, slash) : path;
     }
 
     private static List<string> GetAnalyzerPaths(Assembly assembly)
