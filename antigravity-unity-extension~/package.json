@@ -2,8 +2,9 @@
     "name": "antigravity-unity",
     "displayName": "Antigravity Unity",
     "description": "Fast and lightweight alternative to Unity extension for VS Code. C# IntelliSense via DotRush, Unity debugging, ShaderLab, HLSL, and optimized .csproj generation.",
-    "version": "1.2.0",
-    "publisher": "antigravity",
+    "version": "1.2.1",
+    "publisher": "antigravity-unity",
+    "license": "MIT",
     "repository": {
         "type": "git",
         "url": "https://github.com/billythekidz/UnityAntigravityIDE"
