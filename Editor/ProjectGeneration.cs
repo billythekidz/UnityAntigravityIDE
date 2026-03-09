@@ -108,20 +108,27 @@ public static class ProjectGeneration
         // Get ALL assemblies: Player (includes tests) + Editor
         var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Player);
         var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
-        var assemblies = playerAssemblies
+        var allAssemblies = playerAssemblies
             .Concat(editorAssemblies)
             .GroupBy(a => a.name)
             .Select(g => g.First())
             .ToArray();
 
-        // Clean up orphaned .csproj files from removed assemblies
-        CleanOrphanedProjectFiles(assemblies);
+        // PERF: Only generate .csproj for user-editable assemblies
+        // Package assemblies (Library/PackageCache) are resolved via HintPath references.
+        // This drops load from ~155 projects to ~10-15, dramatically speeding up Roslyn.
+        var userAssemblies = FilterUserAssemblies(allAssemblies);
 
-        foreach (var assembly in assemblies)
+        Debug.Log($"[Antigravity] Generating {userAssemblies.Length} project files (filtered from {allAssemblies.Length} total assemblies)");
+
+        // Clean up orphaned .csproj files
+        CleanOrphanedProjectFiles(userAssemblies);
+
+        foreach (var assembly in userAssemblies)
         {
             GenerateCsproj(assembly);
         }
-        GenerateSolution(assemblies);
+        GenerateSolution(userAssemblies);
         WriteVSCodeSettingsFiles();
         GenerateDirectoryBuildProps();
 
@@ -132,7 +139,41 @@ public static class ProjectGeneration
     }
 
     /// <summary>
-    /// Removes .csproj files that no longer correspond to any active assembly.
+    /// Filters assemblies to only include user-editable ones.
+    /// An assembly is user-editable if ANY of its source files are under:
+    /// - Assets/ (user scripts)
+    /// - Packages/ local packages (not in Library/PackageCache)
+    /// Package assemblies from Library/PackageCache are excluded — their types
+    /// are already resolved via compiledAssemblyReferences with HintPath.
+    /// </summary>
+    private static Assembly[] FilterUserAssemblies(Assembly[] allAssemblies)
+    {
+        string projectDir = Directory.GetCurrentDirectory().Replace("\\", "/");
+        string packageCachePath = (projectDir + "/Library/PackageCache").ToLowerInvariant();
+
+        var result = new List<Assembly>();
+        foreach (var assembly in allAssemblies)
+        {
+            if (assembly.sourceFiles.Length == 0) continue;
+
+            // Check if any source file is outside Library/PackageCache
+            bool isUserEditable = assembly.sourceFiles.Any(f =>
+            {
+                string fullPath = Path.GetFullPath(f).Replace("\\", "/").ToLowerInvariant();
+                return !fullPath.StartsWith(packageCachePath);
+            });
+
+            if (isUserEditable)
+            {
+                result.Add(assembly);
+            }
+        }
+
+        return result.ToArray();
+    }
+
+    /// <summary>
+    /// Removes .csproj files that no longer correspond to any active user assembly.
     /// Prevents stale project files from confusing IDEs after asmdef renames/deletes.
     /// </summary>
     private static void CleanOrphanedProjectFiles(Assembly[] activeAssemblies)
