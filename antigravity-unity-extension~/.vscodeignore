@@ -8,3 +8,4 @@
 !syntaxes/**
 !language-configuration/**
 !assets/**
+release-extension.ps1
