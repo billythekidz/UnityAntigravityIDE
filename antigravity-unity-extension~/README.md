@@ -1,96 +1,99 @@
-# Antigravity Unity — Fast, Lightweight Unity IDE Support
+# Antigravity Unity — C# IntelliSense for Unity without Microsoft Lock-in
 
-**Antigravity Unity** is the ultimate lightweight, high-performance extension for **Antigravity IDE**. Designed for speed, it drops bloat, fixes memory leaks, and provides a blazing-fast C# Unity development experience using the DotRush Roslyn engine.
+## The Problem
 
-Say goodbye to "OmniSharp server is not running" and 5-minute solution load times. Load your Unity project in **2-5 seconds** and get back to making games.
+Microsoft's official **C#**, **C# Dev Kit**, and **Unity** extensions are **licensed exclusively for Visual Studio Code**. If you're using Antigravity IDE, VSCodium, or any other VS Code fork — you simply cannot install them. No IntelliSense, no debugging, no go-to-definition. You're stuck with a fancy text editor.
+
+## The Solution
+
+**Antigravity Unity** pairs with [DotRush](https://open-vsx.org/extension/nromanov/dotrush) — an open-source, MIT-licensed C# language server built on Roslyn — to give you **full C# IntelliSense, debugging, and Unity integration** without depending on Microsoft's proprietary extensions.
+
+On top of that, we ship a custom Unity Editor package that optimizes `.csproj` generation. Instead of loading 150+ project files (most of them read-only UPM internals), we only generate the ~10-15 files you actually edit. Result: your project loads in **2-5 seconds** instead of minutes.
 
 ---
 
 ## ⚠️ Requirements
 
-### 1. Antigravity IDE Support Unity Package (Required)
+### 1. Unity Editor Package (Required)
 
-To achieve lightning-fast IntelliSense, this extension requires a tiny custom Unity Editor package that optimizes `.csproj` generation (cutting from 150+ project files down to ~10 user-editable ones).
+A small Unity package that generates optimized project files for fast IntelliSense.
 
-#### Install via Unity Package Manager
-1. Open your Unity Editor
-2. Go to **Window → Package Manager**
-3. Click **"+" → Add package from git URL...**
-4. Paste: `https://github.com/billythekidz/UnityAntigravityIDE.git`
+**Install via Unity Package Manager:**
+1. Open Unity → **Window → Package Manager**
+2. Click **"+" → Add package from git URL...**
+3. Paste: `https://github.com/billythekidz/UnityAntigravityIDE.git`
 
-#### Setup in Unity
+**Then configure Unity:**
 1. Go to **Edit → Preferences → External Tools**
 2. Set **External Script Editor** to **Antigravity IDE** (or Visual Studio Code)
 3. Click **"Regenerate project files"**
 
-### 2. DotRush (C# IntelliSense & Debugging)
+### 2. DotRush (Required — C# IntelliSense Engine)
 
-**DotRush is MANDATORY** for C# IntelliSense and debugging. While our extension tries to install it automatically, you **must** ensure it is installed:
+Since Microsoft's C# extension isn't available, **DotRush is what gives you IntelliSense**. Without it, you won't have autocomplete, error checking, or go-to-definition.
 
-- **Option A (Marketplace):** Search for **"DotRush"** in the Extensions view and install `nromanov.dotrush`.
-- **Option B (Manual VSIX):** If you are on VSCodium or an offline environment, download the VSIX from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install it manually via "Install from VSIX...".
+- **Option A (Marketplace):** Search **"DotRush"** in Extensions and install `nromanov.dotrush`.
+- **Option B (Manual VSIX):** Download from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install via "Install from VSIX...".
 
 ![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/antigravity-unity-extension~/assets/dotrush_guide.jpg)
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
-1. **Install this extension** from the Antigravity IDE Extensions Marketplace (or Open VSX).
-2. **Install the [Unity package](https://github.com/billythekidz/UnityAntigravityIDE.git)** via Package Manager. 
-3. Open your project in **Antigravity IDE**. If prompted, **allow DotRush to install**.
-4. In Unity, set **Antigravity IDE** as your External Script Editor and click **"Regenerate project files"**.
-5. Switch back to **Antigravity IDE**. 
+1. **Install this extension** from the Marketplace or [Open VSX](https://open-vsx.org/extension/antigravity-unity/antigravity-unity).
+2. **Install the [Unity package](https://github.com/billythekidz/UnityAntigravityIDE.git)** via Package Manager.
+3. Open your project in **Antigravity IDE**. If prompted, allow DotRush to install.
+4. In Unity, set **Antigravity IDE** as your External Script Editor → click **"Regenerate project files"**.
 
 > [!IMPORTANT]
-> **Pro Tip**: When prompted to select a solution file, always **prioritize choosing the `.sln` file** (not individual `.csproj` `.slnx` files) to ensure full DotRush compatibility and cross-project navigation.
+> When prompted to select a solution file, always **choose the `.sln` file** (not `.csproj` or `.slnx`). This ensures full cross-project navigation and DotRush compatibility.
 
-6. Done! Enjoy instant IntelliSense and zero OmniSharp crashes! 🎉
+5. Done. IntelliSense should be working. If not, run `Developer: Reload Window`.
 
 ---
 
-## ✨ Features for Unity Developers
+## ✨ What You Get
 
-### 🧠 C# IntelliSense (Powered by DotRush Roslyn)
-- Full **C# 9.0+ IntelliSense**, autocomplete, go-to-definition, and real-time error checking
-- Supports all core Unity assemblies (`UnityEngine`, `UnityEngine.UI`, `Unity.Netcode`, `TextMeshPro`)
-- **Auto-installs [DotRush](https://marketplace.visualstudio.com/items?itemName=nromanov.dotrush)** — a lightweight cross-platform C# extension
-- **Blazing Fast Startup**: Our custom generator bypasses compiling internal Unity UPM packages. DotRush only parses your actual source code.
+### C# IntelliSense (via DotRush + Roslyn)
+- Full **C# 9.0+** autocomplete, go-to-definition, find references, real-time errors
+- Works with all Unity assemblies — `UnityEngine`, `UnityEngine.UI`, `TextMeshPro`, `Netcode`, etc.
+- Fast startup: our optimized `.csproj` generator means DotRush only parses your actual source code
 
-### 🐛 Unity Debugger
-- **Attach to Unity Local Editor** — Discover and attach instantly
-- Breakpoints, variable inspection, and call stacks for both Editor and Standalone Players
-- Auto-generated `launch.json` setup
+### Unity Debugger
+- **Attach to Unity Editor** — auto-discover running instances
+- Breakpoints, variable inspection, call stacks
+- Works with Editor and Standalone Players
+- Auto-generated `launch.json`
 
-### 🎨 Complete Syntax Highlighting
-- **ShaderLab** (`.shader`) — Full support for ShaderLab blocks + embedded CGPROGRAM/HLSLPROGRAM
-- **HLSL/CG** (`.hlsl`, `.cginc`, `.cg`, `.compute`) — Types, vector maths, semantics
-- **USS** (`.uss`) — Unity Style Sheets with UI Toolkit elements
-- **UXML** (`.uxml`) — Unity XML with custom element highlighting
-- **AsmDef** (`.asmdef`, `.asmref`) — Assembly Definitions JSON with special keys
+### Syntax Highlighting
+- **ShaderLab** (`.shader`) — full ShaderLab blocks + embedded CGPROGRAM/HLSLPROGRAM
+- **HLSL/CG** (`.hlsl`, `.cginc`, `.cg`, `.compute`)
+- **USS** (`.uss`) — Unity Style Sheets
+- **UXML** (`.uxml`) — Unity XML
+- **AsmDef** (`.asmdef`, `.asmref`) — Assembly Definitions
 
-### ⚡ 50+ Unity API Auto-Completions
-Instantly scaffold Unity event functions with proper signatures and summaries inside `MonoBehaviour`:
-- `Start`, `Update`, `Awake`, `FixedUpdate`, `LateUpdate`
-- `OnCollisionEnter`, `OnTriggerEnter`, `OnEnable`, `OnValidate`
+### 50+ Unity API Completions
+Scaffold Unity event functions with correct signatures:
+`Start`, `Update`, `Awake`, `FixedUpdate`, `OnCollisionEnter`, `OnTriggerEnter`, `OnValidate`, etc.
 
-### 📝 25+ Unity C# Snippets
+### 25+ C# Snippets
 | Snippet | Output |
 |---|---|
-| `mono` | Basic `MonoBehaviour` class |
+| `mono` | `MonoBehaviour` class |
 | `scriptobj` | `ScriptableObject` with `[CreateAssetMenu]` |
-| `editor` | `CustomEditor` class structure |
+| `editor` | `CustomEditor` class |
 | `editorwindow` | `EditorWindow` with `[MenuItem]` |
 | `singleton` | Thread-safe generic Singleton |
-| `coroutine` | `IEnumerator` coroutine method |
-| `sfield` | `[SerializeField] private Type fieldName;` |
+| `coroutine` | `IEnumerator` coroutine |
+| `sfield` | `[SerializeField] private` field |
 
 ---
 
-## 🏗️ Open Source & GitHub Links
+## 🏗️ Open Source
 
 - **Repository**: [github.com/billythekidz/UnityAntigravityIDE](https://github.com/billythekidz/UnityAntigravityIDE)
-- **Bug Reports & Feature Requests**: [GitHub Issues](https://github.com/billythekidz/UnityAntigravityIDE/issues)
+- **Issues & Requests**: [GitHub Issues](https://github.com/billythekidz/UnityAntigravityIDE/issues)
 - **License**: MIT
 
-*Keywords: unity, unity3d, unity extensions, antigravity ide, c# intellisense, unity debug, custom editor, dotrush, roslyn, omnisharp alternative*
+*Keywords: unity, c# intellisense, antigravity ide, vscodium, dotrush, roslyn, open source, microsoft c# alternative, unity debug*
