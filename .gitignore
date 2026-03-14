@@ -24,3 +24,4 @@ extensions-vsix~/
 # Local scripts
 release-extension.ps1
 antigravity-unity-extension~/release-extension.ps1
+*.unitypackage
