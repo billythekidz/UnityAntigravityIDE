@@ -1,11 +1,7 @@
 {
   "name": "com.antigravity.ide",
   "displayName": "Antigravity IDE Support",
-<<<<<<< HEAD
   "version": "2.1.23",
-=======
-  "version": "2.1.17",
->>>>>>> d2c8c9512319ea76379cf9d0d3cb06e600f4662c
   "unity": "2021.3",
   "description": "Full-featured Unity integration for Antigravity IDE — IntelliSense, debugging, Roslyn analyzers, and project generation.",
   "keywords": [

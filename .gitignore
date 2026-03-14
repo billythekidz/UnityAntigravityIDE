@@ -6,8 +6,11 @@ DotRush~/
 com.unity.ide.vscode~/
 vscode-unity-debug~/
 
-# VS Code extension source (local dev only)
-antigravity-unity-extension~/
+# VS Code extension source
+!antigravity-unity-extension~/
+antigravity-unity-extension~/out/
+antigravity-unity-extension~/node_modules/
+antigravity-unity-extension~/*.vsix
 
 # Docs (local only)
 docs~/

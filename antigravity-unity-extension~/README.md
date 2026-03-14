@@ -30,7 +30,7 @@ To achieve lightning-fast IntelliSense, this extension requires a tiny custom Un
 - **Option A (Marketplace):** Search for **"DotRush"** in the Extensions view and install `nromanov.dotrush`.
 - **Option B (Manual VSIX):** If you are on VSCodium or an offline environment, download the VSIX from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install it manually via "Install from VSIX...".
 
-![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/assets/dotrush_guide.jpg)
+![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/antigravity-unity-extension~/assets/dotrush_guide.jpg)
 
 ---
 

@@ -62,7 +62,7 @@ The extension provides Unity debugger, syntax highlighting for shaders, and deep
 - **Marketplace:** Search for **"DotRush"** or install `nromanov.dotrush`.
 - **Manual install:** Download from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) if using an offline environment.
 
-![Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/assets/dotrush_guide.jpg)
+![Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/antigravity-unity-extension~/assets/dotrush_guide.jpg)
 
 ---
 
