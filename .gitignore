@@ -21,9 +21,6 @@ extensions-vsix~/
 # Build artifacts
 *.vsix
 
-# Agent configurations
-.agents/
-
 # Local scripts
 release-extension.ps1
 antigravity-unity-extension~/release-extension.ps1
