@@ -158,9 +158,19 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     private static bool IsAntigravityInstallation(string path)
     {
         if (string.IsNullOrEmpty(path)) return false;
+
+        // Check filename directly
         var filename = Path.GetFileName(path);
         var normalized = NormalizeFileName(filename);
-        return k_SupportedFileNames.Contains(normalized);
+        if (k_SupportedFileNames.Contains(normalized))
+            return true;
+
+        // On macOS, the inner binary might be "Electron" inside "Antigravity.app"
+        // Check if any parent directory is an Antigravity .app bundle
+        if (path.IndexOf("Antigravity", StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+
+        return false;
     }
 
     private static string GetExecutablePath(string path)
@@ -202,9 +212,15 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         {
             var installations = new List<CodeEditor.Installation>();
             var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            UnityEngine.Debug.Log($"[Antigravity] Scanning {KnownPaths.Length} known paths on {Application.platform}");
+
             foreach (var path in KnownPaths)
             {
-                if (File.Exists(path) || Directory.Exists(path))
+                bool exists = File.Exists(path) || Directory.Exists(path);
+                UnityEngine.Debug.Log($"[Antigravity]   Path: {path} exists={exists}");
+
+                if (exists)
                 {
                     // Prefer .app bundle paths on macOS — skip inner binaries if the .app is already listed
                     string canonicalPath = path;
@@ -225,9 +241,12 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                             Name = EditorName,
                             Path = canonicalPath
                         });
+                        UnityEngine.Debug.Log($"[Antigravity]   → Registered: {canonicalPath}");
                     }
                 }
             }
+
+            UnityEngine.Debug.Log($"[Antigravity] Found {installations.Count} installation(s)");
             return installations.ToArray();
         }
     }
@@ -435,25 +454,41 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
     {
-        // ✅ LEARN: Use filename-based detection, not string.Contains()
+        UnityEngine.Debug.Log($"[Antigravity] TryGetInstallationForPath called with: '{editorPath}'");
+
+        // Check filename directly
         var filename = Path.GetFileName(editorPath);
         var normalized = NormalizeFileName(filename);
+        bool filenameMatch = k_SupportedFileNames.Contains(normalized);
 
-        if (!k_SupportedFileNames.Contains(normalized))
+        // Check if path contains "antigravity" anywhere (handles Electron binary inside Antigravity.app)
+        bool pathMatch = editorPath.IndexOf("antigravity", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        UnityEngine.Debug.Log($"[Antigravity]   filename='{filename}' normalized='{normalized}' filenameMatch={filenameMatch} pathMatch={pathMatch}");
+
+        if (!filenameMatch && !pathMatch)
         {
-            // Fallback: still accept if path explicitly contains "antigravity" (case-insensitive)
-            if (editorPath.IndexOf("antigravity", StringComparison.OrdinalIgnoreCase) < 0)
+            installation = default;
+            return false;
+        }
+
+        // If the path points to an inner binary of a .app, use the .app path instead
+        string installPath = editorPath;
+        if (Application.platform == RuntimePlatform.OSXEditor)
+        {
+            int appIdx = editorPath.IndexOf(".app", StringComparison.OrdinalIgnoreCase);
+            if (appIdx >= 0)
             {
-                installation = default;
-                return false;
+                installPath = editorPath.Substring(0, appIdx + 4);
             }
         }
 
         installation = new CodeEditor.Installation
         {
             Name = EditorName,
-            Path = editorPath
+            Path = installPath
         };
+        UnityEngine.Debug.Log($"[Antigravity]   → Matched! Installation path: '{installPath}'");
         return true;
     }
 }
