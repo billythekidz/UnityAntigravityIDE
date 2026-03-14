@@ -4,23 +4,31 @@
 
 Say goodbye to "OmniSharp server is not running" and 5-minute solution load times. Load your Unity project in **2-5 seconds** and get back to making games.
 
-## ⚠️ Required: Antigravity IDE Support Unity Package
+## ⚠️ Requirements
+
+### 1. Antigravity IDE Support Unity Package (Required)
 
 To achieve lightning-fast IntelliSense, this extension requires a tiny custom Unity Editor package that optimizes `.csproj` generation (cutting from 150+ project files down to ~10 user-editable ones).
 
-### Install via Unity Package Manager
+#### Install via Unity Package Manager
 1. Open your Unity Editor
 2. Go to **Window → Package Manager**
 3. Click **"+" → Add package from git URL...**
-4. Paste:
-```
-https://github.com/billythekidz/UnityAntigravityIDE.git
-```
+4. Paste: `https://github.com/billythekidz/UnityAntigravityIDE.git`
 
-### Setup in Unity
+#### Setup in Unity
 1. Go to **Edit → Preferences → External Tools**
 2. Set **External Script Editor** to **VS Code** (or Antigravity IDE/Cursor)
 3. Click **"Regenerate project files"**
+
+### 2. DotRush (C# IntelliSense & Debugging)
+
+**DotRush is MANDATORY** for C# IntelliSense and debugging. While our extension tries to install it automatically, you **must** ensure it is installed:
+
+- **Option A (Marketplace):** Search for **"DotRush"** in the Extensions view and install `nromanov.dotrush`.
+- **Option B (Manual VSIX):** If you are on VSCodium or an offline environment, download the VSIX from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install it manually via "Install from VSIX...".
+
+![DotRush Installation Guide](assets/dotrush_guide.jpg)
 
 ---
 
