@@ -1,6 +1,6 @@
-# Antigravity Unity — Fast, Lightweight Unity VS Code Extension
+# Antigravity Unity — Fast, Lightweight Unity IDE Support
 
-**Antigravity Unity** is the ultimate lightweight, high-performance alternative to the official Unity extensions for VS Code and VSCodium. Designed for speed, it drops bloat, fixes memory leaks, and provides a blazing-fast C# Unity development experience using the DotRush Roslyn engine.
+**Antigravity Unity** is the ultimate lightweight, high-performance extension for **Antigravity IDE**. Designed for speed, it drops bloat, fixes memory leaks, and provides a blazing-fast C# Unity development experience using the DotRush Roslyn engine.
 
 Say goodbye to "OmniSharp server is not running" and 5-minute solution load times. Load your Unity project in **2-5 seconds** and get back to making games.
 
@@ -20,7 +20,7 @@ To achieve lightning-fast IntelliSense, this extension requires a tiny custom Un
 
 #### Setup in Unity
 1. Go to **Edit → Preferences → External Tools**
-2. Set **External Script Editor** to **VS Code** (or Antigravity IDE/Cursor)
+2. Set **External Script Editor** to **Antigravity IDE** (or Visual Studio Code)
 3. Click **"Regenerate project files"**
 
 ### 2. DotRush (C# IntelliSense & Debugging)
@@ -36,11 +36,11 @@ To achieve lightning-fast IntelliSense, this extension requires a tiny custom Un
 
 ## 🚀 Quick Start Guide
 
-1. **Install this extension** from Open VSX / VS Code Marketplace.
+1. **Install this extension** from the Antigravity IDE Extensions Marketplace (or Open VSX).
 2. **Install the [Unity package](https://github.com/billythekidz/UnityAntigravityIDE.git)** via Package Manager. 
-3. Open your project in VS Code. If prompted, **allow DotRush to install**.
-4. In Unity, set VS Code as your External Script Editor and click **"Regenerate project files"**.
-5. Switch back to VS Code. 
+3. Open your project in **Antigravity IDE**. If prompted, **allow DotRush to install**.
+4. In Unity, set **Antigravity IDE** as your External Script Editor and click **"Regenerate project files"**.
+5. Switch back to **Antigravity IDE**. 
 
 > [!IMPORTANT]
 > **Pro Tip**: When prompted to select a solution file, always **prioritize choosing the `.sln` file** (not individual `.csproj` `.slnx` files) to ensure full DotRush compatibility and cross-project navigation.
@@ -93,4 +93,4 @@ Instantly scaffold Unity event functions with proper signatures and summaries in
 - **Bug Reports & Feature Requests**: [GitHub Issues](https://github.com/billythekidz/UnityAntigravityIDE/issues)
 - **License**: MIT
 
-*Keywords: unity, unity3d, unity extensions, vs code unity, c# intellisense, unity debug, custom editor, dotrush, roslyn, omnisharp alternative*
+*Keywords: unity, unity3d, unity extensions, antigravity ide, c# intellisense, unity debug, custom editor, dotrush, roslyn, omnisharp alternative*
