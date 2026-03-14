@@ -19,4 +19,5 @@ pack-vsix.ps1
 *.vsix
 *.md
 *.txt
+!README.md
 !CHANGELOG.md
