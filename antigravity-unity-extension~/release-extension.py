@@ -9,10 +9,21 @@ This script:
 3. Publishes to Open VSX
 4. Creates a GitHub Release and uploads the .vsix
 
-Usage: python3 antigravity-unity-extension~/release-extension.py
-       (run from the repo root: UnityAntigravityIDE/)
+Usage:
+  python3 antigravity-unity-extension~/release-extension.py
+  python3 antigravity-unity-extension~/release-extension.py -m "fix: add macOS editor support"
+  python3 antigravity-unity-extension~/release-extension.py --message "feat: new debugging panel"
+
+  (run from the repo root: UnityAntigravityIDE/)
+
+The optional -m/--message flag adds a descriptive summary to the commit and
+GitHub release following Conventional Commits convention:
+  release(v1.2.15): fix: add macOS editor support [skip ci]
+Without -m, the commit message defaults to:
+  release(v1.2.15): patch release [skip ci]
 """
 
+import argparse
 import json
 import os
 import subprocess
@@ -46,6 +57,22 @@ def run(cmd, cwd=None, check=True):
 
 # ─── Main ────────────────────────────────────────────────────────────
 def main():
+    parser = argparse.ArgumentParser(
+        description="Antigravity Unity Extension Release Automator"
+    )
+    parser.add_argument(
+        "-m", "--message",
+        type=str,
+        default=None,
+        help=(
+            "Release description following Conventional Commits convention. "
+            "Examples: 'fix: add macOS editor support', "
+            "'feat: shader syntax highlighting', "
+            "'chore: update dependencies'"
+        )
+    )
+    args = parser.parse_args()
+
     info("--- Starting Release Process ---")
     print(f"Project Root:  {PROJECT_ROOT}")
     print(f"Extension Dir: {EXTENSION_DIR}")
@@ -85,7 +112,16 @@ def main():
 
     ok(f"Version bumped to v{new_version}")
 
-    # 3. Package extension
+    # 3. Build commit message & release notes
+    description = args.message if args.message else "patch release"
+    commit_msg = f"release(v{new_version}): {description} [skip ci]"
+    release_title = f"Antigravity Unity v{new_version}"
+    release_notes = description if args.message else f"Automated release of Antigravity Unity extension version {new_version}."
+
+    info(f"Commit: {commit_msg}")
+    info(f"Release title: {release_title}")
+
+    # 4. Package extension
     warn("Packaging Extension...")
     vsix_name = f"antigravity-unity-{new_version}.vsix"
     run(f"npx -y vsce package --no-git-tag-version -o {vsix_name}", cwd=EXTENSION_DIR)
@@ -95,27 +131,27 @@ def main():
         err(f"VSIX file not found: {vsix_path}")
         sys.exit(1)
 
-    # 4. Publish to Open VSX
+    # 5. Publish to Open VSX
     warn("Publishing to Open VSX...")
     run(f"npx -y ovsx publish {vsix_name} --pat {ovsx_token}", cwd=EXTENSION_DIR)
     ok("Published to Open VSX successfully!")
 
-    # 5. Git Commit & Push
+    # 6. Git Commit & Push
     warn("Committing changes to Git...")
     run("git add .", cwd=PROJECT_ROOT)
-    run(f'git commit -m "release: v{new_version} [skip ci]"', cwd=PROJECT_ROOT)
+    run(f'git commit -m "{commit_msg}"', cwd=PROJECT_ROOT)
     # Use --no-verify to bypass githooks that might rewrite history (amend)
     run("git push --no-verify", cwd=PROJECT_ROOT)
     run(f"git tag v{new_version}", cwd=PROJECT_ROOT)
     run(f"git push origin v{new_version} --no-verify", cwd=PROJECT_ROOT)
 
-    # 6. GitHub Release
+    # 7. GitHub Release
     warn("Creating GitHub Release...")
     relative_vsix = f"antigravity-unity-extension~/antigravity-unity-{new_version}.vsix"
     run(
         f'gh release create "v{new_version}" "{relative_vsix}" '
-        f'--title "Antigravity Unity v{new_version}" '
-        f'--notes "Automated release of Antigravity Unity extension version {new_version}."',
+        f'--title "{release_title}" '
+        f'--notes "{release_notes}"',
         cwd=PROJECT_ROOT
     )
     ok("GitHub Release created!")
