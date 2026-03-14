@@ -7,7 +7,7 @@ if [ ! -f "$FILE" ]; then
   exit 0
 fi
 
-# Skip if this is a release commit (handled by release-extension.ps1)
+# Skip if this is a release commit (handled by release-extension.py)
 COMMIT_MSG=$(cat .git/MERGE_MSG 2>/dev/null || git log -1 --pretty=%B 2>/dev/null || echo "")
 if echo "$COMMIT_MSG" | grep -q "\[skip ci\]"; then
   exit 0
@@ -24,10 +24,17 @@ IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
 PATCH=$((PATCH + 1))
 NEW_VERSION="$MAJOR.$MINOR.$PATCH"
 
-# Replace in file
-sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" "$FILE"
+# Replace in file (compatible with both macOS BSD sed and GNU sed)
+if sed --version >/dev/null 2>&1; then
+  # GNU sed (Linux/Windows Git Bash)
+  sed -i "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" "$FILE"
+else
+  # BSD sed (macOS)
+  sed -i '' "s/\"version\": \"$CURRENT\"/\"version\": \"$NEW_VERSION\"/" "$FILE"
+fi
 
 # Stage the bumped file so it's included in this commit
 git add "$FILE"
 
 echo "Version bumped: $CURRENT -> $NEW_VERSION"
+
