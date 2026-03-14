@@ -90,6 +90,79 @@ Scaffold Unity event functions with correct signatures:
 
 ---
 
+## ❓ FAQ / Troubleshooting
+
+### IntelliSense not working — no autocomplete, no error checking
+
+This is the #1 reported issue. In almost every case, it's one of these:
+
+| Check | Fix |
+|-------|-----|
+| DotRush not installed | Install `nromanov.dotrush` from Extensions or [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) |
+| Wrong solution file selected | When DotRush prompts, pick the **`.sln`** file — not `.csproj` or `.slnx` |
+| No `.sln` file exists | In Unity: **Edit → Preferences → External Tools → Regenerate project files** |
+| DotRush not activated | Check the Extensions panel — DotRush must be **enabled**, not just installed |
+
+After fixing any of the above, run `Ctrl+Shift+P` → `Developer: Reload Window`.
+
+### "Cannot find C# extension" or "OmniSharp not found"
+
+This is expected. Microsoft's C# and C# Dev Kit extensions **cannot be installed** on Antigravity IDE or VSCodium due to licensing restrictions. That's exactly why this extension exists — we use **DotRush** instead of OmniSharp/C# Dev Kit.
+
+If you see references to OmniSharp in error messages, you can safely ignore them. Just make sure DotRush is installed.
+
+### Windows: `.NET SDK not found` or `dotnet` command errors
+
+DotRush requires the .NET SDK to be installed and accessible:
+
+1. Download from [dotnet.microsoft.com](https://dotnet.microsoft.com/download) (SDK, not just Runtime).
+2. After installation, **restart Antigravity IDE** (not just reload).
+3. Verify in terminal: `dotnet --version` should return a version number.
+
+### Windows: Long path errors (`MAX_PATH` exceeded)
+
+Unity projects nested deep in folders can hit Windows' 260-character path limit:
+
+1. Open **Registry Editor** → `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem`
+2. Set `LongPathsEnabled` to `1`
+3. Or run in an elevated PowerShell: `New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force`
+4. Restart your machine.
+
+### Windows: Firewall blocks DotRush or extension downloads
+
+Some corporate environments block Open VSX or GitHub:
+
+- Try downloading the `.vsix` files manually from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) or [GitHub Releases](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest).
+- Install via `Ctrl+Shift+P` → `Extensions: Install from VSIX...`.
+
+### Windows: `Unable to watch for file changes` error
+
+This happens when your Unity project has too many files for Windows' file watcher:
+
+- Add `"files.watcherExclude"` to your workspace settings:
+```json
+{
+  "files.watcherExclude": {
+    "**/Library/**": true,
+    "**/Temp/**": true,
+    "**/obj/**": true
+  }
+}
+```
+
+### Debugging: "Cannot attach to Unity" or no Unity instances found
+
+1. Make sure Unity Editor is **running** with your project open.
+2. In Antigravity IDE: `Ctrl+Shift+P` → `Antigravity: Attach Unity Debugger`.
+3. If no instances appear, check that Unity's **Script Debugging** is enabled in Build Settings.
+4. On Windows, ensure your firewall isn't blocking the debugger port.
+
+### Unity shows "Antigravity (internal)" instead of the real editor name
+
+Your Unity project has **compile errors**. Fix all C# errors in the Console, then the dropdown in **Edit → Preferences → External Tools** will show "Antigravity" correctly.
+
+---
+
 ## 🏗️ Open Source
 
 - **Repository**: [github.com/billythekidz/UnityAntigravityIDE](https://github.com/billythekidz/UnityAntigravityIDE)

@@ -145,6 +145,26 @@ Version is auto-incremented via a local git pre-commit hook:
 
 ## ❓ FAQ / Troubleshooting
 
+### IntelliSense not working — no autocomplete or suggestions
+
+This is the most common issue. Check these in order:
+
+| Check | Fix |
+|-------|-----|
+| DotRush not installed | Install `nromanov.dotrush` from Extensions or [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) |
+| Antigravity Unity extension not installed | Install from [Marketplace](https://open-vsx.org/extension/antigravity-unity/antigravity-unity) or [GitHub Releases](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest) |
+| Wrong solution file selected | When DotRush prompts, pick the **`.sln`** file — not `.csproj` or `.slnx` |
+| No `.sln` file exists | In Unity: **Edit → Preferences → External Tools → Regenerate project files** |
+| DotRush not activated | Check Extensions panel — it must be **enabled**, not just installed |
+
+After fixing, run `Ctrl+Shift+P` → `Developer: Reload Window`.
+
+### "Why can't I just install Microsoft's C# extension?"
+
+Microsoft's **C#**, **C# Dev Kit**, and **Unity** extensions are **licensed exclusively for Visual Studio Code**. They cannot be installed on Antigravity IDE, VSCodium, or any other VS Code fork. This is a Microsoft licensing policy, not a bug.
+
+Our solution: **DotRush** — an open-source, MIT-licensed C# language server built on Roslyn that provides the same core IntelliSense features.
+
 ### "Antigravity (internal)" shows in Unity instead of the real editor
 
 **Cause:** Your Unity project has **compile errors** in C# scripts. When scripts fail to compile, Unity cannot load the Antigravity package properly, so it falls back to showing "(internal)".
@@ -157,8 +177,6 @@ Version is auto-incremented via a local git pre-commit hook:
 > **Tip:** Common culprits include `[SerializeField]` on auto-properties (not supported on some Unity versions), missing assembly references, or outdated third-party packages.
 
 ### Antigravity IDE is not listed in Unity's External Script Editor dropdown
-
-**Possible causes & fixes:**
 
 | Cause | Fix |
 |-------|-----|
@@ -174,11 +192,64 @@ Version is auto-incremented via a local git pre-commit hook:
 3. Make sure `.vscode/settings.json` contains `"dotnet.defaultSolution"` pointing to your `.sln`.
 4. Restart Antigravity IDE after regenerating project files.
 
+### Windows: `.NET SDK not found` or `dotnet` command errors
+
+DotRush requires the .NET SDK to be installed and accessible:
+
+1. Download from [dotnet.microsoft.com](https://dotnet.microsoft.com/download) (**SDK**, not just Runtime).
+2. After installation, **restart Antigravity IDE** (not just reload window).
+3. Verify in terminal: `dotnet --version` should return a version number.
+4. If `dotnet` is still not found, add it to your PATH manually: `C:\Program Files\dotnet\`
+
+### Windows: Long path errors (`MAX_PATH` exceeded)
+
+Unity projects nested deep in folders can hit Windows' 260-character path limit:
+
+1. Open **Registry Editor** → `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem`
+2. Set `LongPathsEnabled` to `1`
+3. Or run in an elevated PowerShell:
+   ```powershell
+   New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+   ```
+4. Restart your machine.
+
+### Windows: Firewall or proxy blocks extension downloads
+
+Some corporate/school environments block Open VSX or GitHub:
+
+- Download `.vsix` files manually from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) or [GitHub Releases](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest).
+- Install via `Ctrl+Shift+P` → `Extensions: Install from VSIX...`.
+
+### Windows: `Unable to watch for file changes` error
+
+Unity projects generate thousands of files in `Library/` and `Temp/`. Add these exclusions to your workspace settings:
+
+```json
+{
+  "files.watcherExclude": {
+    "**/Library/**": true,
+    "**/Temp/**": true,
+    "**/obj/**": true
+  }
+}
+```
+
+### Windows: Antivirus flags DotRush or the extension
+
+Some antivirus software (especially Windows Defender) may quarantine DotRush's language server binary. Add an exclusion for your Antigravity IDE installation folder and the `.dotnet` tools directory.
+
 ### macOS: "open" command errors or editor doesn't launch
 
 - Ensure `Antigravity.app` is in `/Applications/` (not `~/Downloads/`).
 - If Gatekeeper blocks the app, right-click → **Open** to bypass.
 - The Unity package handles macOS `.app` bundles automatically — you don't need to point to the inner `Contents/MacOS/` binary.
+
+### Debugging: "Cannot attach to Unity" or no instances found
+
+1. Make sure Unity Editor is **running** with your project open.
+2. In Antigravity IDE: `Ctrl+Shift+P` → `Antigravity: Attach Unity Debugger`.
+3. If no instances appear, check that Unity's **Script Debugging** is enabled in Build Settings.
+4. On Windows, ensure your firewall isn't blocking the debugger port.
 
 ### How do I set up the git hooks after cloning?
 
