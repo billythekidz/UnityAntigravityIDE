@@ -50,16 +50,19 @@ Or use Unity Package Manager → Add package from git URL:
 https://github.com/billythekidz/UnityAntigravityIDE.git
 ```
 
-### Antigravity/VS Code Extension
-Install the VSIX from the `antigravity-unity-extension~/` folder:
-1. Open Antigravity IDE / VS Code
-2. `Ctrl+Shift+P` → "Extensions: Install from VSIX..."
-3. Select `antigravity-unity-1.2.0.vsix`
+### 1. Antigravity Unity IDE Extension
+The extension provides Unity debugger, syntax highlighting for shaders, and deep IDE integration. 
 
-### DotRush (auto-installed)
-DotRush provides C# IntelliSense and debugging. It will be **prompted for installation automatically** when the Antigravity Unity extension activates.
+- **Option A (Marketplace):** Search for **"Antigravity Unity"** in the Extensions Marketplace (or Open VSX) and install.
+- **Option B (Manual VSIX):** Download the latest `.vsix` from our [GitHub Releases](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest) and install via `Extensions: Install from VSIX...`.
 
-Manual install: Search "DotRush" in the extensions marketplace or install `nromanov.dotrush`.
+### 2. DotRush (Mandatory for IntelliSense)
+**DotRush is REQUIRED** for C# IntelliSense and debugging.
+
+- **Marketplace:** Search for **"DotRush"** or install `nromanov.dotrush`.
+- **Manual install:** Download from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) if using an offline environment.
+
+![Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/assets/dotrush_guide.jpg)
 
 ---
 
