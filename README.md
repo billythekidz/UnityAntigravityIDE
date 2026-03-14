@@ -102,8 +102,9 @@ UnityAntigravityIDE/
 │   └── UnityDebugBridge.cs          # Debug bridge for Unity
 ├── package.json                     # UPM package manifest
 ├── .githooks/                       # Local git hooks
-│   └── bump-version.ps1             # Auto-increment patch version on push
+│   └── pre-commit                   # Auto-increment patch version on commit
 ├── antigravity-unity-extension~/    # VS Code extension (local dev only)
+│   └── release-extension.py         # Cross-platform release automator
 ├── DotRush~/                        # DotRush reference (local dev only)
 ├── com.unity.ide.vscode~/           # VS Code IDE reference (local dev only)
 └── vscode-unity-debug~/             # Unity debugger reference (local dev only)
@@ -135,10 +136,57 @@ UnityAntigravityIDE/
 
 ## 📝 Versioning
 
-Version is auto-incremented via a local git pre-push hook:
-- Patch bumps on every push (e.g., `2.1.7` → `2.1.8`)
-- Uses `.githooks/bump-version.ps1`
+Version is auto-incremented via a local git pre-commit hook:
+- Patch bumps on every commit (e.g., `2.1.7` → `2.1.8`)
+- Uses `.githooks/pre-commit` (cross-platform bash, works on macOS and Linux)
 - Set up: `git config core.hooksPath .githooks`
+
+---
+
+## ❓ FAQ / Troubleshooting
+
+### "Antigravity (internal)" shows in Unity instead of the real editor
+
+**Cause:** Your Unity project has **compile errors** in C# scripts. When scripts fail to compile, Unity cannot load the Antigravity package properly, so it falls back to showing "(internal)".
+
+**Fix:**
+1. Open Unity's **Console** window and look for red error messages.
+2. Fix all C# compilation errors in your project.
+3. Once scripts compile successfully, go to **Edit → Preferences → External Tools** — the dropdown should now show **"Antigravity"** (not "internal").
+
+> **Tip:** Common culprits include `[SerializeField]` on auto-properties (not supported on some Unity versions), missing assembly references, or outdated third-party packages.
+
+### Antigravity IDE is not listed in Unity's External Script Editor dropdown
+
+**Possible causes & fixes:**
+
+| Cause | Fix |
+|-------|-----|
+| Antigravity IDE is not installed | Install from [Antigravity Downloads](https://antigravity.dev) or your package manager |
+| App is not in `/Applications/` (macOS) | Move `Antigravity.app` to `/Applications/` |
+| Unity package not installed | Add the git URL to `Packages/manifest.json` (see [Installation](#-installation)) |
+| Project has compile errors | Fix all C# errors first (see above) |
+
+### DotRush IntelliSense is not working
+
+1. Confirm **DotRush** is installed: open Extensions in Antigravity IDE and search for `nromanov.dotrush`.
+2. In Unity: **Edit → Preferences → External Tools → Regenerate project files**.
+3. Make sure `.vscode/settings.json` contains `"dotnet.defaultSolution"` pointing to your `.sln`.
+4. Restart Antigravity IDE after regenerating project files.
+
+### macOS: "open" command errors or editor doesn't launch
+
+- Ensure `Antigravity.app` is in `/Applications/` (not `~/Downloads/`).
+- If Gatekeeper blocks the app, right-click → **Open** to bypass.
+- The Unity package handles macOS `.app` bundles automatically — you don't need to point to the inner `Contents/MacOS/` binary.
+
+### How do I set up the git hooks after cloning?
+
+Run this once after cloning the repo:
+```bash
+git config core.hooksPath .githooks
+```
+This enables the pre-commit hook that auto-bumps the Unity package version.
 
 ---
 
