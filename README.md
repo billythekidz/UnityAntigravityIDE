@@ -53,7 +53,7 @@ https://github.com/billythekidz/UnityAntigravityIDE.git
 ### 1. Antigravity Unity IDE Extension
 The extension provides Unity debugger, syntax highlighting for shaders, and deep IDE integration. 
 
-- **Option A (Marketplace):** Search for **"Antigravity Unity"** in the Extensions Marketplace (or Open VSX) and install.
+- **Option A (Marketplace):** Search for **"Antigravity Unity"** in the Extensions Marketplace (or [Open VSX](https://open-vsx.org/extension/antigravity-unity/antigravity-unity)) and install.
 - **Option B (Manual VSIX):** Download the latest `.vsix` from our [GitHub Releases](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest) and install via `Extensions: Install from VSIX...`.
 
 ### 2. DotRush (Mandatory for IntelliSense)
