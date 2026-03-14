@@ -175,25 +175,27 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     private static string GetExecutablePath(string path)
     {
-        if (path.EndsWith(".app"))
+        // .app bundle resolution — macOS only
+        if (Application.platform == RuntimePlatform.OSXEditor && path.EndsWith(".app"))
         {
-            // Try to find the inner binary — the name varies depending on the .app bundle name
+            // Try the CLI binary first (reliable for --goto args)
+            string cliBinary = Path.Combine(path, "Contents", "Resources", "app", "bin", "antigravity");
+            if (File.Exists(cliBinary)) return cliBinary;
+
+            // Fallback: inner binary in MacOS/
             string macosDir = Path.Combine(path, "Contents", "MacOS");
             if (Directory.Exists(macosDir))
             {
-                // The inner binary typically matches the .app name without extension
                 string appName = Path.GetFileNameWithoutExtension(path);
                 string executable = Path.Combine(macosDir, appName);
                 if (File.Exists(executable)) return executable;
 
-                // Fallback: try common names
-                foreach (var name in new[] { "Antigravity", "Antigravity IDE", "antigravity" })
+                foreach (var name in new[] { "Antigravity", "Antigravity IDE", "antigravity", "Electron" })
                 {
                     executable = Path.Combine(macosDir, name);
                     if (File.Exists(executable)) return executable;
                 }
 
-                // Last resort: pick the first executable-looking file in MacOS/
                 try
                 {
                     var files = Directory.GetFiles(macosDir);
@@ -365,42 +367,22 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
             if (Application.platform == RuntimePlatform.OSXEditor && installation.EndsWith(".app"))
             {
-                // macOS: use `open -a "App.app" --args <editor-args>`
-                // The `open` command handles activating existing windows.
-                // All arguments after --args are passed directly to the app's binary.
                 process.StartInfo.FileName = "/usr/bin/open";
-
-                var openArgs = new List<string>();
-
-                if (!reuseWindow)
-                    openArgs.Add("-n"); // -n = new instance
-
-                openArgs.Add("-a");
-                openArgs.Add($"\"{installation}\"");
-                openArgs.Add("--args");
-
-                // Editor args: --reuse-window/--new-window, then project + goto
-                if (reuseWindow)
-                    openArgs.Add("--reuse-window");
-
-                if (Directory.Exists(filePath))
-                {
-                    // Opening a folder/project
-                    openArgs.Add($"\"{filePath}\"");
-                }
-                else
-                {
-                    // Opening a specific file at line:column
-                    openArgs.Add($"\"{projectDir}\"");
-                    openArgs.Add("--goto");
-                    openArgs.Add($"\"{filePath}:{line}:{column}\"");
-                }
-
-                process.StartInfo.Arguments = string.Join(" ", openArgs);
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = true;
 
-                UnityEngine.Debug.Log($"[Antigravity] macOS launch: /usr/bin/open {process.StartInfo.Arguments}");
+                if (Directory.Exists(filePath))
+                {
+                    // Opening a folder — use `open -a` (native macOS, reuses existing app)
+                    process.StartInfo.Arguments = $"-a \"{installation}\" \"{filePath}\"";
+                }
+                else
+                {
+                    // Opening a file at line:col — use antigravity:// URL scheme
+                    // macOS routes this to the existing app instance (no new dock icon)
+                    string uri = $"antigravity://file{filePath}:{line}:{column}";
+                    process.StartInfo.Arguments = $"\"{uri}\"";
+                }
             }
             else if (Application.platform == RuntimePlatform.OSXEditor)
             {
@@ -416,7 +398,6 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 }
                 else
                 {
-                    args.Add($"\"{projectDir}\"");
                     args.Add("--goto");
                     args.Add($"\"{filePath}:{line}:{column}\"");
                 }
@@ -424,8 +405,6 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 process.StartInfo.Arguments = string.Join(" ", args);
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = true;
-
-                UnityEngine.Debug.Log($"[Antigravity] macOS launch: {installation} {process.StartInfo.Arguments}");
             }
             else
             {
@@ -441,7 +420,6 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 }
                 else
                 {
-                    args.Add($"\"{projectDir}\"");
                     args.Add("--goto");
                     args.Add($"\"{filePath}:{line}:{column}\"");
                 }
