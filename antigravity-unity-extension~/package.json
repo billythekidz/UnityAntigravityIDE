@@ -2,7 +2,7 @@
     "name":  "antigravity-unity",
     "displayName":  "Antigravity Unity",
     "description":  "Fast and lightweight Unity extension for Antigravity IDE. C# IntelliSense via DotRush, Unity debugging, ShaderLab, HLSL, and optimized .csproj generation.",
-    "version":  "1.2.7",
+    "version":  "1.2.8",
     "icon":  "assets/antigravity_unity_avatar_1773472297359.png",
     "publisher":  "antigravity-unity",
     "license":  "MIT",
