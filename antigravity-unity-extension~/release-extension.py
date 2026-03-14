@@ -6,8 +6,9 @@ Python equivalent of release-extension.ps1
 This script:
 1. Bumps the patch version in extension package.json
 2. Packages the extension into a .vsix using vsce
-3. Publishes to Open VSX
-4. Creates a GitHub Release and uploads the .vsix
+3. Builds a .unitypackage for offline installation
+4. Publishes to Open VSX
+5. Creates a GitHub Release and uploads both .vsix and .unitypackage
 
 Usage:
   python3 antigravity-unity-extension~/release-extension.py
@@ -28,6 +29,9 @@ import json
 import os
 import subprocess
 import sys
+import re
+import tarfile
+import tempfile
 
 # ─── Resolve paths ───────────────────────────────────────────────────
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -55,6 +59,68 @@ def run(cmd, cwd=None, check=True):
     print(f"  $ {cmd}")
     result = subprocess.run(cmd, shell=True, cwd=cwd, check=check)
     return result
+
+# ─── Unity Package Builder ───────────────────────────────────────────
+INSTALL_PREFIX = "Assets/Plugins/AntigravityIDE"
+INCLUDE_FOLDERS = ["Editor"]
+INCLUDE_FILES = [
+    "Editor/AntigravityScriptEditor.cs",
+    "Editor/ProjectGeneration.cs",
+    "Editor/UnityAnalyzerConfig.cs",
+    "Editor/UnityDebugBridge.cs",
+    "Editor/Antigravity.Ide.Editor.asmdef",
+    "package.json",
+    "README.md",
+]
+
+def extract_guid(meta_path):
+    with open(meta_path, "r", encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"guid:\s*([a-f0-9]+)", line)
+            if m:
+                return m.group(1)
+    raise ValueError(f"No GUID found in {meta_path}")
+
+def build_unitypackage(project_root, output_path):
+    """Build a .unitypackage from the project files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with tarfile.open(output_path, "w:gz") as tar:
+            entries = []
+            # Folders
+            for folder in INCLUDE_FOLDERS:
+                meta = os.path.join(project_root, f"{folder}.meta")
+                if os.path.exists(meta):
+                    guid = extract_guid(meta)
+                    pathname = f"{INSTALL_PREFIX}/{folder}"
+                    _add_tar_entry(tar, tmpdir, guid, pathname, None, meta)
+                    entries.append(pathname)
+            # Files
+            for filepath in INCLUDE_FILES:
+                asset = os.path.join(project_root, filepath)
+                meta = os.path.join(project_root, f"{filepath}.meta")
+                if os.path.exists(asset) and os.path.exists(meta):
+                    guid = extract_guid(meta)
+                    pathname = f"{INSTALL_PREFIX}/{filepath}"
+                    _add_tar_entry(tar, tmpdir, guid, pathname, asset, meta)
+                    entries.append(pathname)
+    print(f"  {len(entries)} assets packaged")
+
+def _add_tar_entry(tar, tmpdir, guid, pathname, asset_path, meta_path):
+    gdir = os.path.join(tmpdir, guid)
+    os.makedirs(gdir, exist_ok=True)
+    # pathname
+    pf = os.path.join(gdir, "pathname")
+    with open(pf, "w") as f: f.write(pathname)
+    tar.add(pf, arcname=f"{guid}/pathname")
+    # asset.meta
+    mf = os.path.join(gdir, "asset.meta")
+    with open(meta_path, "r") as s, open(mf, "w") as d: d.write(s.read())
+    tar.add(mf, arcname=f"{guid}/asset.meta")
+    # asset (skip for folders)
+    if asset_path and os.path.isfile(asset_path):
+        af = os.path.join(gdir, "asset")
+        with open(asset_path, "rb") as s, open(af, "wb") as d: d.write(s.read())
+        tar.add(af, arcname=f"{guid}/asset")
 
 # ─── Main ────────────────────────────────────────────────────────────
 def main():
@@ -148,6 +214,13 @@ def main():
         err(f"VSIX file not found: {vsix_path}")
         sys.exit(1)
 
+    # 4b. Build .unitypackage
+    warn("Building .unitypackage...")
+    unitypackage_name = f"AntigravityIDE-{unity_new}.unitypackage"
+    unitypackage_path = os.path.join(EXTENSION_DIR, unitypackage_name)
+    build_unitypackage(PROJECT_ROOT, unitypackage_path)
+    ok(f"Built {unitypackage_name}")
+
     # 5. Publish to Open VSX
     warn("Publishing to Open VSX...")
     run(f"npx -y ovsx publish {vsix_name} --pat {ovsx_token}", cwd=EXTENSION_DIR)
@@ -165,8 +238,9 @@ def main():
     # 7. GitHub Release
     warn("Creating GitHub Release...")
     relative_vsix = f"antigravity-unity-extension~/antigravity-unity-{new_version}.vsix"
+    relative_unity = f"antigravity-unity-extension~/{unitypackage_name}"
     run(
-        f'gh release create "v{new_version}" "{relative_vsix}" '
+        f'gh release create "v{new_version}" "{relative_vsix}" "{relative_unity}" '
         f'--title "{release_title}" '
         f'--notes "{release_notes}"',
         cwd=PROJECT_ROOT
