@@ -1,4 +1,4 @@
-# Auto-bump patch version — run before git push
+# Auto-bump patch version — runs as pre-commit hook
 # Usage: powershell -File .githooks/bump-version.ps1
 
 $file = Join-Path $PSScriptRoot "..\package.json"
@@ -14,7 +14,7 @@ $content = Get-Content $file -Raw
 $content = $content -replace "`"version`": `"$current`"", "`"version`": `"$newVersion`""
 Set-Content $file $content -NoNewline
 
+# Stage the bumped file (no amend!)
 git add $file
-git commit --amend --no-edit --no-verify
 
 Write-Host "Version bumped: $current -> $newVersion"
