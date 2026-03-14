@@ -60,11 +60,12 @@ A small Unity package that generates optimized project files for fast IntelliSen
 - Works with all Unity assemblies — `UnityEngine`, `UnityEngine.UI`, `TextMeshPro`, `Netcode`, etc.
 - Fast startup: our optimized `.csproj` generator means DotRush only parses your actual source code
 
-### Unity Debugger
+### Unity Debugger ⚠️ *Experimental*
 - **Attach to Unity Editor** — auto-discover running instances
 - Breakpoints, variable inspection, call stacks
-- Works with Editor and Standalone Players
 - Auto-generated `launch.json`
+
+> **Note:** The debugger is still a work in progress. Basic breakpoints and variable inspection work, but some advanced features (conditional breakpoints, Edit & Continue) are not yet fully supported. We're actively improving this.
 
 ### Syntax Highlighting
 - **ShaderLab** (`.shader`) — full ShaderLab blocks + embedded CGPROGRAM/HLSLPROGRAM
@@ -104,6 +105,10 @@ This is the #1 reported issue. In almost every case, it's one of these:
 | DotRush not activated | Check the Extensions panel — DotRush must be **enabled**, not just installed |
 
 After fixing any of the above, run `Ctrl+Shift+P` → `Developer: Reload Window`.
+
+### Special characters in folder/project names (`&`, `+`, `#`, etc.)
+
+If any folder in your Unity project path contains special characters like `&`, `+`, `#`, or non-ASCII characters, DotRush/Roslyn may fail to parse `.csproj` files. **Rename the folder** to use only alphanumeric characters, dashes, and underscores.
 
 ### "Cannot find C# extension" or "OmniSharp not found"
 

@@ -26,7 +26,7 @@ Full-featured Unity integration for Antigravity IDE — IntelliSense, debugging,
 
 ### 🔧 Unity Project Tools
 - `Antigravity: Regenerate Project Files` — regenerate all `.csproj` and `.sln` from Unity
-- `Antigravity: Attach Unity Debugger` — attach to running Unity instance
+- `Antigravity: Attach Unity Debugger` — attach to running Unity instance *(experimental)*
 - `Antigravity: Unity API Reference` — quick access to Unity docs
 - Unity C# code snippets (MonoBehaviour methods, attributes, etc.)
 
@@ -158,6 +158,10 @@ This is the most common issue. Check these in order:
 | DotRush not activated | Check Extensions panel — it must be **enabled**, not just installed |
 
 After fixing, run `Ctrl+Shift+P` → `Developer: Reload Window`.
+
+### Special characters in folder/project names (`&`, `+`, `#`, etc.)
+
+If any folder in your Unity project path contains special characters like `&`, `+`, `#`, or non-ASCII characters, DotRush/Roslyn may fail to parse `.csproj` files. **Rename the folder** to use only alphanumeric characters, dashes, and underscores.
 
 ### "Why can't I just install Microsoft's C# extension?"
 
