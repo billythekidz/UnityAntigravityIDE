@@ -359,53 +359,94 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
         bool reuseWindow = EditorPrefs.GetBool(PrefKey_ReuseWindow, true);
 
-        var args = new List<string>();
-
-        if (reuseWindow)
-            args.Add("--reuse-window");
-
-        if (Directory.Exists(filePath))
-        {
-            args.Add($"\"{filePath}\"");
-        }
-        else
-        {
-            args.Add($"\"{projectDir}\"");
-            args.Add("--goto");
-            args.Add($"\"{filePath}:{line}:{column}\"");
-        }
-
-        string arguments = string.Join(" ", args);
-
         try
         {
             var process = new Process();
 
-            if (Application.platform == RuntimePlatform.OSXEditor)
+            if (Application.platform == RuntimePlatform.OSXEditor && installation.EndsWith(".app"))
             {
-                if (installation.EndsWith(".app"))
+                // macOS: use `open -a "App.app" --args <editor-args>`
+                // The `open` command handles activating existing windows.
+                // All arguments after --args are passed directly to the app's binary.
+                process.StartInfo.FileName = "/usr/bin/open";
+
+                var openArgs = new List<string>();
+
+                if (!reuseWindow)
+                    openArgs.Add("-n"); // -n = new instance
+
+                openArgs.Add("-a");
+                openArgs.Add($"\"{installation}\"");
+                openArgs.Add("--args");
+
+                // Editor args: --reuse-window/--new-window, then project + goto
+                if (reuseWindow)
+                    openArgs.Add("--reuse-window");
+
+                if (Directory.Exists(filePath))
                 {
-                    // Use macOS `open` command to launch .app bundles properly
-                    // -a = open with this application, -n = new instance (when not reusing)
-                    process.StartInfo.FileName = "/usr/bin/open";
-                    if (reuseWindow)
-                        process.StartInfo.Arguments = $"-a \"{installation}\" --args {arguments}";
-                    else
-                        process.StartInfo.Arguments = $"-n -a \"{installation}\" --args {arguments}";
+                    // Opening a folder/project
+                    openArgs.Add($"\"{filePath}\"");
                 }
                 else
                 {
-                    // Direct binary path (e.g. Homebrew symlink)
-                    process.StartInfo.FileName = installation;
-                    process.StartInfo.Arguments = arguments;
+                    // Opening a specific file at line:column
+                    openArgs.Add($"\"{projectDir}\"");
+                    openArgs.Add("--goto");
+                    openArgs.Add($"\"{filePath}:{line}:{column}\"");
                 }
+
+                process.StartInfo.Arguments = string.Join(" ", openArgs);
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.CreateNoWindow = true;
+
+                UnityEngine.Debug.Log($"[Antigravity] macOS launch: /usr/bin/open {process.StartInfo.Arguments}");
+            }
+            else if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                // Direct binary path (e.g. Homebrew symlink)
+                process.StartInfo.FileName = installation;
+
+                var args = new List<string>();
+                if (reuseWindow) args.Add("--reuse-window");
+
+                if (Directory.Exists(filePath))
+                {
+                    args.Add($"\"{filePath}\"");
+                }
+                else
+                {
+                    args.Add($"\"{projectDir}\"");
+                    args.Add("--goto");
+                    args.Add($"\"{filePath}:{line}:{column}\"");
+                }
+
+                process.StartInfo.Arguments = string.Join(" ", args);
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+
+                UnityEngine.Debug.Log($"[Antigravity] macOS launch: {installation} {process.StartInfo.Arguments}");
             }
             else
             {
+                // Windows / Linux
                 process.StartInfo.FileName = GetExecutablePath(installation);
-                process.StartInfo.Arguments = arguments;
+
+                var args = new List<string>();
+                if (reuseWindow) args.Add("--reuse-window");
+
+                if (Directory.Exists(filePath))
+                {
+                    args.Add($"\"{filePath}\"");
+                }
+                else
+                {
+                    args.Add($"\"{projectDir}\"");
+                    args.Add("--goto");
+                    args.Add($"\"{filePath}:{line}:{column}\"");
+                }
+
+                process.StartInfo.Arguments = string.Join(" ", args);
                 process.StartInfo.WindowStyle = installation.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
                     ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
                 process.StartInfo.UseShellExecute = true;

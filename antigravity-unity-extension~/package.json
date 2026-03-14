@@ -1,176 +1,174 @@
 {
-    "name":  "antigravity-unity",
-    "displayName":  "Antigravity Unity",
-    "description":  "C# IntelliSense, debugging, and Unity integration without Microsoft\u0027s locked extensions. Powered by DotRush + Roslyn.",
-    "version":  "1.2.24",
-    "icon":  "assets/antigravity_unity_avatar_1773472297359.png",
-    "publisher":  "antigravity-unity",
-    "license":  "MIT",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "https://github.com/billythekidz/UnityAntigravityIDE"
-                   },
-    "engines":  {
-                    "vscode":  "^1.80.0"
-                },
-    "categories":  [
-                       "Programming Languages",
-                       "Snippets",
-                       "Other"
-                   ],
-    "keywords":  [
-                     "unity",
-                     "unity3d",
-                     "csharp",
-                     "c#",
-                     "intellisense",
-                     "game development",
-                     "game-dev",
-                     "dotrush",
-                     "roslyn",
-                     "shaderlab",
-                     "hlsl",
-                     "unity-debug"
-                 ],
-    "activationEvents":  [
-                             "workspaceContains:**/*.unity",
-                             "workspaceContains:Assets/",
-                             "workspaceContains:ProjectSettings/",
-                             "onDebug"
-                         ],
-    "main":  "./out/extension.js",
-    "extensionDependencies":  [
-
-                              ],
-    "contributes":  {
-                        "commands":  [
-                                         {
-                                             "command":  "antigravity-unity.attachDebugger",
-                                             "title":  "Attach Unity Debugger",
-                                             "category":  "Antigravity"
-                                         },
-                                         {
-                                             "command":  "antigravity-unity.openApiReference",
-                                             "title":  "Unity API Reference",
-                                             "category":  "Antigravity"
-                                         },
-                                         {
-                                             "command":  "antigravity-unity.regenerateProjectFiles",
-                                             "title":  "Regenerate Project Files",
-                                             "category":  "Antigravity"
-                                         }
-                                     ],
-                        "breakpoints":  [
-                                            {
-                                                "language":  "csharp"
-                                            },
-                                            {
-                                                "language":  "shaderlab"
-                                            }
-                                        ],
-                        "languages":  [
-                                          {
-                                              "id":  "shaderlab",
-                                              "aliases":  [
-                                                              "ShaderLab",
-                                                              "Unity Shader"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".shader"
-                                                             ],
-                                              "configuration":  "./language-configuration/shaderlab.language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "hlsl",
-                                              "aliases":  [
-                                                              "HLSL",
-                                                              "CG"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".cginc",
-                                                                 ".hlsl",
-                                                                 ".cg",
-                                                                 ".compute"
-                                                             ],
-                                              "configuration":  "./language-configuration/hlsl.language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "uss",
-                                              "aliases":  [
-                                                              "Unity Style Sheet",
-                                                              "USS"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".uss"
-                                                             ],
-                                              "configuration":  "./language-configuration/uss.language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "uxml",
-                                              "aliases":  [
-                                                              "Unity XML",
-                                                              "UXML"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".uxml"
-                                                             ],
-                                              "configuration":  "./language-configuration/uxml.language-configuration.json"
-                                          },
-                                          {
-                                              "id":  "asmdef",
-                                              "aliases":  [
-                                                              "Assembly Definition",
-                                                              "asmdef"
-                                                          ],
-                                              "extensions":  [
-                                                                 ".asmdef",
-                                                                 ".asmref"
-                                                             ],
-                                              "configuration":  "./language-configuration/asmdef.language-configuration.json"
-                                          }
-                                      ],
-                        "grammars":  [
-                                         {
-                                             "language":  "shaderlab",
-                                             "scopeName":  "source.shaderlab",
-                                             "path":  "./syntaxes/shaderlab.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "hlsl",
-                                             "scopeName":  "source.hlsl",
-                                             "path":  "./syntaxes/hlsl.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "uss",
-                                             "scopeName":  "source.uss",
-                                             "path":  "./syntaxes/uss.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "uxml",
-                                             "scopeName":  "text.xml.uxml",
-                                             "path":  "./syntaxes/uxml.tmLanguage.json"
-                                         },
-                                         {
-                                             "language":  "asmdef",
-                                             "scopeName":  "source.json.asmdef",
-                                             "path":  "./syntaxes/asmdef.tmLanguage.json"
-                                         }
-                                     ],
-                        "snippets":  [
-                                         {
-                                             "language":  "csharp",
-                                             "path":  "./snippets/unity-csharp.json"
-                                         }
-                                     ]
-                    },
-    "scripts":  {
-                    "compile":  "tsc -p ./",
-                    "watch":  "tsc -watch -p ./",
-                    "lint":  "eslint src --ext ts"
-                },
-    "devDependencies":  {
-                            "@types/node":  "^18.0.0",
-                            "@types/vscode":  "^1.80.0",
-                            "typescript":  "^5.0.0"
-                        }
+    "name": "antigravity-unity",
+    "displayName": "Antigravity Unity",
+    "description": "C# IntelliSense, debugging, and Unity integration without Microsoft's locked extensions. Powered by DotRush + Roslyn.",
+    "version": "1.2.25",
+    "icon": "assets/antigravity_unity_avatar_1773472297359.png",
+    "publisher": "antigravity-unity",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/billythekidz/UnityAntigravityIDE"
+    },
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets",
+        "Other"
+    ],
+    "keywords": [
+        "unity",
+        "unity3d",
+        "csharp",
+        "c#",
+        "intellisense",
+        "game development",
+        "game-dev",
+        "dotrush",
+        "roslyn",
+        "shaderlab",
+        "hlsl",
+        "unity-debug"
+    ],
+    "activationEvents": [
+        "workspaceContains:**/*.unity",
+        "workspaceContains:Assets/",
+        "workspaceContains:ProjectSettings/",
+        "onDebug"
+    ],
+    "main": "./out/extension.js",
+    "extensionDependencies": [],
+    "contributes": {
+        "commands": [
+            {
+                "command": "antigravity-unity.attachDebugger",
+                "title": "Attach Unity Debugger",
+                "category": "Antigravity"
+            },
+            {
+                "command": "antigravity-unity.openApiReference",
+                "title": "Unity API Reference",
+                "category": "Antigravity"
+            },
+            {
+                "command": "antigravity-unity.regenerateProjectFiles",
+                "title": "Regenerate Project Files",
+                "category": "Antigravity"
+            }
+        ],
+        "breakpoints": [
+            {
+                "language": "csharp"
+            },
+            {
+                "language": "shaderlab"
+            }
+        ],
+        "languages": [
+            {
+                "id": "shaderlab",
+                "aliases": [
+                    "ShaderLab",
+                    "Unity Shader"
+                ],
+                "extensions": [
+                    ".shader"
+                ],
+                "configuration": "./language-configuration/shaderlab.language-configuration.json"
+            },
+            {
+                "id": "hlsl",
+                "aliases": [
+                    "HLSL",
+                    "CG"
+                ],
+                "extensions": [
+                    ".cginc",
+                    ".hlsl",
+                    ".cg",
+                    ".compute"
+                ],
+                "configuration": "./language-configuration/hlsl.language-configuration.json"
+            },
+            {
+                "id": "uss",
+                "aliases": [
+                    "Unity Style Sheet",
+                    "USS"
+                ],
+                "extensions": [
+                    ".uss"
+                ],
+                "configuration": "./language-configuration/uss.language-configuration.json"
+            },
+            {
+                "id": "uxml",
+                "aliases": [
+                    "Unity XML",
+                    "UXML"
+                ],
+                "extensions": [
+                    ".uxml"
+                ],
+                "configuration": "./language-configuration/uxml.language-configuration.json"
+            },
+            {
+                "id": "asmdef",
+                "aliases": [
+                    "Assembly Definition",
+                    "asmdef"
+                ],
+                "extensions": [
+                    ".asmdef",
+                    ".asmref"
+                ],
+                "configuration": "./language-configuration/asmdef.language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "shaderlab",
+                "scopeName": "source.shaderlab",
+                "path": "./syntaxes/shaderlab.tmLanguage.json"
+            },
+            {
+                "language": "hlsl",
+                "scopeName": "source.hlsl",
+                "path": "./syntaxes/hlsl.tmLanguage.json"
+            },
+            {
+                "language": "uss",
+                "scopeName": "source.uss",
+                "path": "./syntaxes/uss.tmLanguage.json"
+            },
+            {
+                "language": "uxml",
+                "scopeName": "text.xml.uxml",
+                "path": "./syntaxes/uxml.tmLanguage.json"
+            },
+            {
+                "language": "asmdef",
+                "scopeName": "source.json.asmdef",
+                "path": "./syntaxes/asmdef.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "csharp",
+                "path": "./snippets/unity-csharp.json"
+            }
+        ]
+    },
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@types/vscode": "^1.80.0",
+        "typescript": "^5.0.0"
+    }
 }
