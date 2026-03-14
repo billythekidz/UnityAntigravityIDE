@@ -19,17 +19,20 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     const string PrefKey_Extensions = "Antigravity_UserExtensions";
 
     // ✅ LEARN: Proper filename-based detection like com.unity.ide.vscode
+    // NOTE: All names here must be lowercase, with NO spaces or dashes.
+    // Detection normalizes filenames by lowercasing and stripping spaces/dashes.
     static readonly string[] k_SupportedFileNames =
     {
         // Windows
         "antigravity.exe",
-        "antigravity-ide.exe",
-        // macOS
+        "antigravityide.exe",
+        // macOS (.app bundles and inner binaries)
         "antigravity.app",
-        "antigravity-ide.app",
+        "antigravityide.app",
         "antigravity",
+        "antigravityide",
         // Linux
-        "antigravity-ide",
+        "antigravityide",
     };
 
     static readonly string DefaultArgument = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
@@ -69,6 +72,15 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         .Select(s => s.TrimStart('.', '*'))
         .ToArray();
 
+    /// <summary>
+    /// Normalizes a filename for comparison by lowercasing and stripping spaces and dashes.
+    /// e.g. "Antigravity IDE.app" → "antigravityide.app", "antigravity-ide" → "antigravityide"
+    /// </summary>
+    private static string NormalizeFileName(string filename)
+    {
+        return filename.ToLower().Replace(" ", "").Replace("-", "");
+    }
+
     private static string[] KnownPaths
     {
         get
@@ -77,10 +89,16 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
             if (Application.platform == RuntimePlatform.OSXEditor)
             {
+                // System Applications
                 paths.Add("/Applications/Antigravity.app");
-                paths.Add("/Applications/Antigravity.app/Contents/MacOS/Antigravity");
                 paths.Add("/Applications/Antigravity IDE.app");
-                paths.Add("/Applications/Antigravity IDE.app/Contents/MacOS/Antigravity IDE");
+                // User Applications
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                paths.Add(Path.Combine(userProfile, "Applications", "Antigravity.app"));
+                paths.Add(Path.Combine(userProfile, "Applications", "Antigravity IDE.app"));
+                // Homebrew
+                paths.Add("/opt/homebrew/bin/antigravity");
+                paths.Add("/usr/local/bin/antigravity");
             }
             else if (Application.platform == RuntimePlatform.WindowsEditor)
             {
@@ -140,19 +158,40 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     private static bool IsAntigravityInstallation(string path)
     {
         if (string.IsNullOrEmpty(path)) return false;
-        var filename = Path.GetFileName(path.ToLower())
-            .Replace(" ", "")
-            .Replace("\\", Path.DirectorySeparatorChar.ToString())
-            .Replace("/", Path.DirectorySeparatorChar.ToString());
-        return k_SupportedFileNames.Contains(filename);
+        var filename = Path.GetFileName(path);
+        var normalized = NormalizeFileName(filename);
+        return k_SupportedFileNames.Contains(normalized);
     }
 
     private static string GetExecutablePath(string path)
     {
         if (path.EndsWith(".app"))
         {
-            string executable = Path.Combine(path, "Contents", "MacOS", "Antigravity");
-            return File.Exists(executable) ? executable : path;
+            // Try to find the inner binary — the name varies depending on the .app bundle name
+            string macosDir = Path.Combine(path, "Contents", "MacOS");
+            if (Directory.Exists(macosDir))
+            {
+                // The inner binary typically matches the .app name without extension
+                string appName = Path.GetFileNameWithoutExtension(path);
+                string executable = Path.Combine(macosDir, appName);
+                if (File.Exists(executable)) return executable;
+
+                // Fallback: try common names
+                foreach (var name in new[] { "Antigravity", "Antigravity IDE", "antigravity" })
+                {
+                    executable = Path.Combine(macosDir, name);
+                    if (File.Exists(executable)) return executable;
+                }
+
+                // Last resort: pick the first executable-looking file in MacOS/
+                try
+                {
+                    var files = Directory.GetFiles(macosDir);
+                    if (files.Length > 0) return files[0];
+                }
+                catch (Exception) { }
+            }
+            return path;
         }
         return path;
     }
@@ -162,15 +201,31 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         get
         {
             var installations = new List<CodeEditor.Installation>();
+            var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var path in KnownPaths)
             {
                 if (File.Exists(path) || Directory.Exists(path))
                 {
-                    installations.Add(new CodeEditor.Installation
+                    // Prefer .app bundle paths on macOS — skip inner binaries if the .app is already listed
+                    string canonicalPath = path;
+                    if (!path.EndsWith(".app") && Application.platform == RuntimePlatform.OSXEditor)
                     {
-                        Name = EditorName,
-                        Path = path
-                    });
+                        // Check if this is an inner binary of an already-found .app
+                        int appIdx = path.IndexOf(".app/", StringComparison.OrdinalIgnoreCase);
+                        if (appIdx >= 0)
+                        {
+                            canonicalPath = path.Substring(0, appIdx + 4); // up to and including .app
+                        }
+                    }
+
+                    if (seenPaths.Add(canonicalPath))
+                    {
+                        installations.Add(new CodeEditor.Installation
+                        {
+                            Name = EditorName,
+                            Path = canonicalPath
+                        });
+                    }
                 }
             }
             return installations.ToArray();
@@ -317,10 +372,26 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         {
             var process = new Process();
 
-            if (installation.EndsWith(".app") && Application.platform == RuntimePlatform.OSXEditor)
+            if (Application.platform == RuntimePlatform.OSXEditor)
             {
-                process.StartInfo.FileName = "/usr/bin/open";
-                process.StartInfo.Arguments = $"-n \"{installation}\" --args {arguments}";
+                if (installation.EndsWith(".app"))
+                {
+                    // Use macOS `open` command to launch .app bundles properly
+                    // -a = open with this application, -n = new instance (when not reusing)
+                    process.StartInfo.FileName = "/usr/bin/open";
+                    if (reuseWindow)
+                        process.StartInfo.Arguments = $"-a \"{installation}\" --args {arguments}";
+                    else
+                        process.StartInfo.Arguments = $"-n -a \"{installation}\" --args {arguments}";
+                }
+                else
+                {
+                    // Direct binary path (e.g. Homebrew symlink)
+                    process.StartInfo.FileName = installation;
+                    process.StartInfo.Arguments = arguments;
+                }
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
             }
             else
             {
@@ -328,10 +399,10 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 process.StartInfo.Arguments = arguments;
                 process.StartInfo.WindowStyle = installation.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase)
                     ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal;
+                process.StartInfo.UseShellExecute = true;
+                process.StartInfo.CreateNoWindow = true;
             }
 
-            process.StartInfo.UseShellExecute = true;
-            process.StartInfo.CreateNoWindow = true;
             process.Start();
             return true;
         }
@@ -365,13 +436,13 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     public bool TryGetInstallationForPath(string editorPath, out CodeEditor.Installation installation)
     {
         // ✅ LEARN: Use filename-based detection, not string.Contains()
-        var lowerCasePath = editorPath.ToLower();
-        var filename = Path.GetFileName(lowerCasePath).Replace(" ", "");
+        var filename = Path.GetFileName(editorPath);
+        var normalized = NormalizeFileName(filename);
 
-        if (!k_SupportedFileNames.Contains(filename))
+        if (!k_SupportedFileNames.Contains(normalized))
         {
-            // Fallback: still accept if path explicitly contains "Antigravity"
-            if (!editorPath.Contains("Antigravity") && !editorPath.Contains("antigravity"))
+            // Fallback: still accept if path explicitly contains "antigravity" (case-insensitive)
+            if (editorPath.IndexOf("antigravity", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 installation = default;
                 return false;
