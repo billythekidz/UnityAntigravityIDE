@@ -35,6 +35,7 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 EXTENSION_DIR = SCRIPT_DIR
 
 PACKAGE_JSON_PATH = os.path.join(EXTENSION_DIR, "package.json")
+UNITY_PKG_JSON_PATH = os.path.join(PROJECT_ROOT, "package.json")
 SECRETS_FILE = os.path.join(PROJECT_ROOT, ".secrets", "ovsx-token.txt")
 
 # ─── Helpers ─────────────────────────────────────────────────────────
@@ -110,7 +111,23 @@ def main():
         json.dump(pkg, f, indent=4, ensure_ascii=False)
         f.write("\n")
 
-    ok(f"Version bumped to v{new_version}")
+    ok(f"Extension version bumped to v{new_version}")
+
+    # Also bump root Unity package.json (since pre-commit hook is skipped via --no-verify)
+    with open(UNITY_PKG_JSON_PATH, "r", encoding="utf-8") as f:
+        unity_pkg = json.load(f)
+
+    unity_current = unity_pkg["version"]
+    unity_parts = unity_current.split(".")
+    unity_parts[2] = str(int(unity_parts[2]) + 1)
+    unity_new = ".".join(unity_parts)
+    unity_pkg["version"] = unity_new
+
+    with open(UNITY_PKG_JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(unity_pkg, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    ok(f"Unity package version bumped to v{unity_new}")
 
     # 3. Build commit message & release notes
     description = args.message if args.message else "patch release"
