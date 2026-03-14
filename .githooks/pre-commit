@@ -7,11 +7,7 @@ if [ ! -f "$FILE" ]; then
   exit 0
 fi
 
-# Skip if this is a release commit (handled by release-extension.py)
-COMMIT_MSG=$(cat .git/MERGE_MSG 2>/dev/null || git log -1 --pretty=%B 2>/dev/null || echo "")
-if echo "$COMMIT_MSG" | grep -q "\[skip ci\]"; then
-  exit 0
-fi
+# Note: The release script (release-extension.py) uses --no-verify to skip this hook.
 
 # Read current version
 CURRENT=$(grep -o '"version": "[^"]*"' "$FILE" | head -1 | grep -o '[0-9]*\.[0-9]*\.[0-9]*')

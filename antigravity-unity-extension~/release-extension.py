@@ -139,7 +139,7 @@ def main():
     # 6. Git Commit & Push
     warn("Committing changes to Git...")
     run("git add .", cwd=PROJECT_ROOT)
-    run(f'git commit -m "{commit_msg}"', cwd=PROJECT_ROOT)
+    run(f'git commit --no-verify -m "{commit_msg}"', cwd=PROJECT_ROOT)
     # Use --no-verify to bypass githooks that might rewrite history (amend)
     run("git push --no-verify", cwd=PROJECT_ROOT)
     run(f"git tag v{new_version}", cwd=PROJECT_ROOT)
