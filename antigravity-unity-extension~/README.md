@@ -14,7 +14,16 @@ On top of that, we ship a custom Unity Editor package that optimizes `.csproj` g
 
 ## ⚠️ Requirements
 
-### 1. Unity Editor Package (Required)
+### 1. DotRush (Required — C# IntelliSense Engine)
+
+Since Microsoft's C# extension isn't available, **DotRush is what gives you IntelliSense**. Without it, you won't have autocomplete, error checking, or go-to-definition.
+
+- **Option A (Marketplace):** Search **"DotRush"** in Extensions and install `nromanov.dotrush`.
+- **Option B (Manual VSIX):** Download from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install via "Install from VSIX...".
+
+![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/antigravity-unity-extension~/assets/dotrush_guide.jpg)
+
+### 2. Unity Editor Package (Required)
 
 A small Unity package that generates optimized project files for fast IntelliSense.
 
@@ -27,15 +36,6 @@ A small Unity package that generates optimized project files for fast IntelliSen
 1. Go to **Edit → Preferences → External Tools**
 2. Set **External Script Editor** to **Antigravity IDE** (or Visual Studio Code)
 3. Click **"Regenerate project files"**
-
-### 2. DotRush (Required — C# IntelliSense Engine)
-
-Since Microsoft's C# extension isn't available, **DotRush is what gives you IntelliSense**. Without it, you won't have autocomplete, error checking, or go-to-definition.
-
-- **Option A (Marketplace):** Search **"DotRush"** in Extensions and install `nromanov.dotrush`.
-- **Option B (Manual VSIX):** Download from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install via "Install from VSIX...".
-
-![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/antigravity-unity-extension~/assets/dotrush_guide.jpg)
 
 ---
 
