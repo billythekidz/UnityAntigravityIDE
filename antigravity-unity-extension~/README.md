@@ -1,5 +1,10 @@
 # Antigravity Unity — C# IntelliSense for Unity without Microsoft Lock-in
 
+[![Open VSX Version](https://img.shields.io/open-vsx/v/antigravity-unity/antigravity-unity?label=Open%20VSX&color=blueviolet)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/antigravity-unity/antigravity-unity?color=brightgreen)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity)
+[![Open VSX Rating](https://img.shields.io/open-vsx/rating/antigravity-unity/antigravity-unity?color=orange)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity#review-details)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## The Problem
 
 Microsoft's official **C#**, **C# Dev Kit**, and **Unity** extensions are **licensed exclusively for Visual Studio Code**. If you're using Antigravity IDE, VSCodium, or any other VS Code fork — you simply cannot install them. No IntelliSense, no debugging, no go-to-definition. You're stuck with a fancy text editor.

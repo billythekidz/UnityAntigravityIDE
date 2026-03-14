@@ -1,5 +1,11 @@
 # Antigravity Unity IDE Support
 
+[![Open VSX Version](https://img.shields.io/open-vsx/v/antigravity-unity/antigravity-unity?label=Open%20VSX&color=blueviolet)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/antigravity-unity/antigravity-unity?color=brightgreen)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity)
+[![Open VSX Rating](https://img.shields.io/open-vsx/rating/antigravity-unity/antigravity-unity?color=orange)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity#review-details)
+[![GitHub Release](https://img.shields.io/github/v/release/billythekidz/UnityAntigravityIDE?color=blue)](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Full-featured Unity integration for Antigravity IDE — IntelliSense, debugging, Roslyn analyzers, and optimized project generation.
 
 ## ✨ Features
