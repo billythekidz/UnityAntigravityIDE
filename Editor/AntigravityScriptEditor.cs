@@ -244,6 +244,28 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     public void Initialize(string editorInstallationPath)
     {
         ProjectGeneration.Sync();
+
+        // Fix stale launch.json from com.unity.ide.visualstudio (vstuc debug type)
+        FixLaunchJsonDebugType();
+    }
+
+    private static void FixLaunchJsonDebugType()
+    {
+        string projectDir = Directory.GetCurrentDirectory();
+        string launchPath = Path.Combine(projectDir, ".vscode", "launch.json");
+
+        if (!File.Exists(launchPath)) return;
+
+        try
+        {
+            string content = File.ReadAllText(launchPath);
+            if (content.Contains("\"vstuc\"") || content.Contains("\"unity\""))
+            {
+                // Regenerate with correct debug type via UnityDebugBridge
+                UnityDebugBridge.StartBridge();
+            }
+        }
+        catch (Exception) { }
     }
 
     public void OnGUI()

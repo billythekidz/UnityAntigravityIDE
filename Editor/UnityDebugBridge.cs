@@ -275,25 +275,28 @@ public static class UnityDebugBridge
             Directory.CreateDirectory(vscodeDir);
         }
 
-        // Generate launch.json using DotRush's "unity" debugger type
-        // EditorInstance.json path is used by vscode-unity-debug pattern for multi-instance discovery
-        string editorInstancePath = "${workspaceFolder}/Library/EditorInstance.json";
+        // Get the Unity process ID for "attach to process" debugging
+        int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+
+        // Generate launch.json using DotRush's "coreclr" debugger type
+        // This replaces any stale "vstuc" configs from com.unity.ide.visualstudio
         string launchPath = Path.Combine(vscodeDir, "launch.json");
         string launchContent = $@"{{
     ""version"": ""0.2.0"",
     ""configurations"": [
         {{
             ""name"": ""Attach to Unity Editor"",
-            ""type"": ""unity"",
+            ""type"": ""coreclr"",
             ""request"": ""attach"",
-            ""path"": ""{editorInstancePath}""
+            ""processId"": ""{pid}""
         }},
         {{
-            ""name"": ""Attach to Unity Player"",
-            ""type"": ""unity"",
+            ""name"": ""Attach to Unity Editor (Pick Process)"",
+            ""type"": ""coreclr"",
             ""request"": ""attach"",
-            ""transportArgs"": {{
-                ""port"": {bridgePort}
+            ""processId"": ""${{command:pickProcess}}"",
+            ""sourceFileMap"": {{
+                ""/Users/bokken/build/output/unity/unity/"": """"
             }}
         }}
     ]
