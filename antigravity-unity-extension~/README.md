@@ -4,6 +4,8 @@
 
 Say goodbye to "OmniSharp server is not running" and 5-minute solution load times. Load your Unity project in **2-5 seconds** and get back to making games.
 
+---
+
 ## ⚠️ Requirements
 
 ### 1. Antigravity IDE Support Unity Package (Required)
@@ -28,7 +30,22 @@ To achieve lightning-fast IntelliSense, this extension requires a tiny custom Un
 - **Option A (Marketplace):** Search for **"DotRush"** in the Extensions view and install `nromanov.dotrush`.
 - **Option B (Manual VSIX):** If you are on VSCodium or an offline environment, download the VSIX from [Open VSX](https://open-vsx.org/extension/nromanov/dotrush) and install it manually via "Install from VSIX...".
 
-![DotRush Installation Guide](assets/dotrush_guide.jpg)
+![DotRush Installation Guide](https://raw.githubusercontent.com/billythekidz/UnityAntigravityIDE/main/assets/dotrush_guide.jpg)
+
+---
+
+## 🚀 Quick Start Guide
+
+1. **Install this extension** from Open VSX / VS Code Marketplace.
+2. **Install the [Unity package](https://github.com/billythekidz/UnityAntigravityIDE.git)** via Package Manager. 
+3. Open your project in VS Code. If prompted, **allow DotRush to install**.
+4. In Unity, set VS Code as your External Script Editor and click **"Regenerate project files"**.
+5. Switch back to VS Code. 
+
+> [!IMPORTANT]
+> **Pro Tip**: When prompted to select a solution file, always **prioritize choosing the `.sln` file** (not individual `.csproj` `.slnx` files) to ensure full DotRush compatibility and cross-project navigation.
+
+6. Done! Enjoy instant IntelliSense and zero OmniSharp crashes! 🎉
 
 ---
 
@@ -52,7 +69,7 @@ To achieve lightning-fast IntelliSense, this extension requires a tiny custom Un
 - **UXML** (`.uxml`) — Unity XML with custom element highlighting
 - **AsmDef** (`.asmdef`, `.asmref`) — Assembly Definitions JSON with special keys
 
-### � 50+ Unity API Auto-Completions
+### ⚡ 50+ Unity API Auto-Completions
 Instantly scaffold Unity event functions with proper signatures and summaries inside `MonoBehaviour`:
 - `Start`, `Update`, `Awake`, `FixedUpdate`, `LateUpdate`
 - `OnCollisionEnter`, `OnTriggerEnter`, `OnEnable`, `OnValidate`
@@ -67,16 +84,6 @@ Instantly scaffold Unity event functions with proper signatures and summaries in
 | `singleton` | Thread-safe generic Singleton |
 | `coroutine` | `IEnumerator` coroutine method |
 | `sfield` | `[SerializeField] private Type fieldName;` |
-
----
-
-## 🚀 Quick Start Guide
-
-1. **Install this extension** from Open VSX / VS Code Marketplace
-2. **Install the [Unity package](https://github.com/billythekidz/UnityAntigravityIDE.git)** via Package Manager 
-3. Open your project in VS Code. If prompted, **allow DotRush to install**.
-4. In Unity, set VS Code as your External Script Editor and click **"Regenerate project files"**.
-5. Switch back to VS Code. Enjoy instant IntelliSense and zero OmniSharp crashes! 🎉
 
 ---
 
