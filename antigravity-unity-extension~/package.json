@@ -2,7 +2,7 @@
     "name": "antigravity-unity",
     "displayName": "Antigravity Unity",
     "description": "C# IntelliSense, debugging, and Unity integration without Microsoft's locked extensions. Powered by DotRush + Roslyn.",
-    "version": "1.2.30",
+    "version": "1.2.31",
     "icon": "assets/antigravity_unity_avatar_1773472297359.png",
     "publisher": "antigravity-unity",
     "license": "MIT",

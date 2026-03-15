@@ -325,8 +325,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         EditorGUILayout.BeginHorizontal();
         if (GUILayout.Button("Regenerate Project Files", GUILayout.Height(24)))
         {
-            ProjectGeneration.Sync();
-            UnityEngine.Debug.Log("[Antigravity] Project files regenerated.");
+            ProjectGeneration.Sync(isManual: true);
         }
 
         if (GUILayout.Button("Reset Settings", GUILayout.Height(24)))
