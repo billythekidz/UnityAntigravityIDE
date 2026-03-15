@@ -102,7 +102,7 @@ public static class ProjectGeneration
         ".md", ".inputactions"
     };
 
-    public static void Sync()
+    public static void Sync(bool isManual = false)
     {
         Profiler.BeginSample("AntigravityProjectSync");
         // Get ALL assemblies: Player (includes tests) + Editor
@@ -119,14 +119,14 @@ public static class ProjectGeneration
         // This drops load from ~155 projects to ~10-15, dramatically speeding up Roslyn.
         var userAssemblies = FilterUserAssemblies(allAssemblies);
 
-        Debug.Log($"[Antigravity] Generating {userAssemblies.Length} project files (filtered from {allAssemblies.Length} total assemblies)");
-
         // Clean up orphaned .csproj files
         CleanOrphanedProjectFiles(userAssemblies);
 
+        var activeNames = new HashSet<string>(userAssemblies.Select(a => a.name), StringComparer.OrdinalIgnoreCase);
+
         foreach (var assembly in userAssemblies)
         {
-            GenerateCsproj(assembly);
+            GenerateCsproj(assembly, activeNames);
         }
         GenerateSolution(userAssemblies);
         CleanCompetingSolutionFiles();
@@ -136,7 +136,11 @@ public static class ProjectGeneration
         OnGeneratedCSProjectFiles();
 
         Profiler.EndSample();
-        Debug.Log("[Antigravity] Project files synchronized.");
+
+        if (isManual)
+        {
+            Debug.Log("[Antigravity] Project files synchronized successfully.");
+        }
     }
 
     /// <summary>
@@ -190,7 +194,6 @@ public static class ProjectGeneration
                 if (!activeNames.Contains(name))
                 {
                     File.Delete(csproj);
-                    Debug.Log($"[Antigravity] Removed orphaned project file: {name}.csproj");
                 }
             }
         }
@@ -212,7 +215,6 @@ public static class ProjectGeneration
             foreach (var slnx in Directory.GetFiles(projectDir, "*.slnx"))
             {
                 File.Delete(slnx);
-                Debug.Log($"[Antigravity] Removed competing solution file: {Path.GetFileName(slnx)}");
             }
         }
         catch (Exception ex)
@@ -236,13 +238,13 @@ public static class ProjectGeneration
 
         if (needsSync)
         {
-            Sync();
+            Sync(isManual: false);
         }
 
         Profiler.EndSample();
     }
 
-    private static void GenerateCsproj(Assembly assembly)
+    private static void GenerateCsproj(Assembly assembly, HashSet<string> generatedAssemblies)
     {
         string projectPath = Path.Combine(Directory.GetCurrentDirectory(), $"{assembly.name}.csproj");
 
@@ -312,12 +314,26 @@ public static class ProjectGeneration
 
         // Assembly references
         sb.AppendLine("  <ItemGroup>");
+
+        var referencedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var reference in assembly.compiledAssemblyReferences)
         {
-            sb.AppendLine($"    <Reference Include=\"{Path.GetFileNameWithoutExtension(reference)}\">");
+            var refName = Path.GetFileNameWithoutExtension(reference);
+            referencedNames.Add(refName);
+            sb.AppendLine($"    <Reference Include=\"{refName}\">");
             sb.AppendLine($"        <HintPath>{reference.Replace("\\", "/")}</HintPath>");
             sb.AppendLine("    </Reference>");
         }
+
+        // Unity's compiledAssemblyReferences may omit core assemblies (UnityEditor.dll,
+        // UnityEngine.dll) because Unity resolves them implicitly. DotRush/Roslyn needs
+        // explicit HintPath references to resolve types like MenuItem, EditorUtility, etc.
+        // (This issue seems specific to macOS, Windows resolves it correctly with prior logic)
+        if (Application.platform == RuntimePlatform.OSXEditor)
+        {
+            AppendCoreUnityReferences(sb, referencedNames);
+        }
+
         sb.AppendLine("  </ItemGroup>");
 
         // Source files
@@ -348,7 +364,25 @@ public static class ProjectGeneration
             var refsWithDll = new List<(string name, string dllPath)>();
             foreach (var refAssembly in assembly.assemblyReferences)
             {
+                // Typically user scripts go to Library/ScriptAssemblies
                 string dllPath = Path.Combine(scriptAssembliesDir, $"{refAssembly.name}.dll");
+                
+                // If not found there, try the explicit output path provided by Unity
+                // (This is crucial for precompiled package assemblies or those generated elsewhere)
+                // Checking platform here to avoid changing Windows behavior which was already stable
+                if (Application.platform == RuntimePlatform.OSXEditor && !File.Exists(dllPath) && !string.IsNullOrEmpty(refAssembly.outputPath))
+                {
+                    // outputPath might be relative to project root or absolute
+                    string fallbackPath = Path.IsPathRooted(refAssembly.outputPath) 
+                        ? refAssembly.outputPath 
+                        : Path.Combine(projectDir, refAssembly.outputPath);
+                        
+                    if (File.Exists(fallbackPath))
+                    {
+                        dllPath = fallbackPath;
+                    }
+                }
+
                 if (File.Exists(dllPath))
                 {
                     refsWithDll.Add((refAssembly.name, dllPath));
@@ -368,17 +402,22 @@ public static class ProjectGeneration
                 sb.AppendLine("  </ItemGroup>");
             }
 
-            // Second: keep ProjectReference for IDE navigation (Go to Definition across projects)
-            sb.AppendLine("  <ItemGroup>");
-            foreach (var refAssembly in assembly.assemblyReferences)
+            // Second: add ProjectReference ONLY for active projects (Go to Definition across projects)
+            // Emitting ProjectReference for non-existent .csproj files breaks Roslyn.
+            var projectRefs = assembly.assemblyReferences.Where(r => generatedAssemblies.Contains(r.name)).ToList();
+            if (projectRefs.Count > 0)
             {
-                sb.AppendLine($"    <ProjectReference Include=\"{refAssembly.name}.csproj\">");
-                sb.AppendLine($"      <Project>{{{GenerateGuid(refAssembly.name)}}}</Project>");
-                sb.AppendLine($"      <Name>{refAssembly.name}</Name>");
-                sb.AppendLine($"      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>");
-                sb.AppendLine("    </ProjectReference>");
+                sb.AppendLine("  <ItemGroup>");
+                foreach (var refAssembly in projectRefs)
+                {
+                    sb.AppendLine($"    <ProjectReference Include=\"{refAssembly.name}.csproj\">");
+                    sb.AppendLine($"      <Project>{{{GenerateGuid(refAssembly.name)}}}</Project>");
+                    sb.AppendLine($"      <Name>{refAssembly.name}</Name>");
+                    sb.AppendLine($"      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>");
+                    sb.AppendLine("    </ProjectReference>");
+                }
+                sb.AppendLine("  </ItemGroup>");
             }
-            sb.AppendLine("  </ItemGroup>");
         }
 
         sb.AppendLine("  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.CSharp.targets\" />");
@@ -667,6 +706,38 @@ public static class ProjectGeneration
             sb.AppendLine("    </Reference>");
         }
         sb.AppendLine("  </ItemGroup>");
+    }
+
+    /// <summary>
+    /// Ensures core Unity assemblies (UnityEditor.dll, UnityEngine.dll) are referenced.
+    /// Unity's compiledAssemblyReferences may omit these because Unity links them implicitly,
+    /// but Roslyn/DotRush needs explicit HintPath entries for type resolution.
+    /// </summary>
+    private static void AppendCoreUnityReferences(StringBuilder sb, HashSet<string> existingRefs)
+    {
+        // Unity's managed assemblies location
+        string managedPath = Path.Combine(EditorApplication.applicationContentsPath,
+            "Resources", "Scripting", "Managed");
+
+        // Core assemblies that may be implicitly linked
+        string[] coreAssemblies = new[] { "UnityEditor", "UnityEngine" };
+
+        foreach (var name in coreAssemblies)
+        {
+            if (existingRefs.Contains(name)) continue;
+
+            // Check both direct and subfolder paths
+            string dllPath = Path.Combine(managedPath, $"{name}.dll");
+            if (!File.Exists(dllPath))
+            {
+                dllPath = Path.Combine(managedPath, "UnityEngine", $"{name}.dll");
+            }
+            if (!File.Exists(dllPath)) continue;
+
+            sb.AppendLine($"    <Reference Include=\"{name}\">");
+            sb.AppendLine($"        <HintPath>{dllPath.Replace("\\", "/")}</HintPath>");
+            sb.AppendLine("    </Reference>");
+        }
     }
 
     // -- Non-script Asset Inclusion -------------------------------------
