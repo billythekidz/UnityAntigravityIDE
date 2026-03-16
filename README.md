@@ -6,6 +6,10 @@
 [![GitHub Release](https://img.shields.io/github/v/release/billythekidz/UnityAntigravityIDE?color=blue)](https://github.com/billythekidz/UnityAntigravityIDE/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+<a href='https://ko-fi.com/Y8Y61ABMM' target='_blank'>
+  <img width='250' src='https://ko-fi.com/img/githubbutton_sm.svg' alt='Support me on Ko-fi' />
+</a>
+
 Full-featured Unity integration for Antigravity IDE — IntelliSense, debugging, Roslyn analyzers, and optimized project generation.
 
 ## ✨ Features
