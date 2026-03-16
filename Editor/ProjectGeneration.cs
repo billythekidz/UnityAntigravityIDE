@@ -420,6 +420,15 @@ public static class ProjectGeneration
             }
         }
 
+        // macOS fix: Unity's CompilationPipeline may omit some package DLLs from both
+        // compiledAssemblyReferences and assemblyReferences (e.g. Unity.Purchasing.SecurityStub
+        // which contains CrossPlatformValidator). Scan Library/ScriptAssemblies for any
+        // DLLs not yet referenced. This is a flat directory listing (~96 files), negligible cost.
+        if (Application.platform == RuntimePlatform.OSXEditor)
+        {
+            AppendMissingScriptAssemblies(sb, referencedNames);
+        }
+
         sb.AppendLine("  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.CSharp.targets\" />");
         sb.AppendLine("</Project>");
 
@@ -737,6 +746,64 @@ public static class ProjectGeneration
             sb.AppendLine($"    <Reference Include=\"{name}\">");
             sb.AppendLine($"        <HintPath>{dllPath.Replace("\\", "/")}</HintPath>");
             sb.AppendLine("    </Reference>");
+        }
+    }
+
+    /// <summary>
+    /// Scans Library/ScriptAssemblies for DLLs not yet referenced in the .csproj,
+    /// but ONLY adds those that are "siblings" of already-referenced assemblies.
+    /// E.g. if "Unity.Purchasing" is referenced, "Unity.Purchasing.SecurityStub" is added,
+    /// but unrelated assemblies like "Unity.PlasticSCM.Editor" are skipped.
+    /// This keeps DotRush fast by only adding ~3-5 extra DLLs instead of ~60.
+    /// </summary>
+    private static void AppendMissingScriptAssemblies(StringBuilder sb, HashSet<string> existingRefs)
+    {
+        string scriptAssembliesDir = Path.Combine(Directory.GetCurrentDirectory(), "Library", "ScriptAssemblies");
+        if (!Directory.Exists(scriptAssembliesDir)) return;
+
+        // Build a set of "root" names from existing references.
+        // E.g. "Unity.Purchasing.SecurityCore" → roots include "Unity.Purchasing"
+        var roots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in existingRefs)
+        {
+            int lastDot = name.LastIndexOf('.');
+            while (lastDot > 0)
+            {
+                roots.Add(name.Substring(0, lastDot));
+                lastDot = name.Substring(0, lastDot).LastIndexOf('.');
+            }
+        }
+
+        var missingRefs = new List<(string name, string path)>();
+        foreach (var dllPath in Directory.GetFiles(scriptAssembliesDir, "*.dll"))
+        {
+            string name = Path.GetFileNameWithoutExtension(dllPath);
+            if (existingRefs.Contains(name)) continue;
+
+            // Check if this DLL is a sibling of an existing reference
+            int lastDot = name.LastIndexOf('.');
+            if (lastDot > 0)
+            {
+                string parent = name.Substring(0, lastDot);
+                if (roots.Contains(parent) || existingRefs.Contains(parent))
+                {
+                    missingRefs.Add((name, dllPath));
+                    existingRefs.Add(name);
+                }
+            }
+        }
+
+        if (missingRefs.Count > 0)
+        {
+            sb.AppendLine("  <ItemGroup>");
+            foreach (var (name, path) in missingRefs)
+            {
+                sb.AppendLine($"    <Reference Include=\"{name}\">");
+                sb.AppendLine($"        <HintPath>{path.Replace("\\", "/")}</HintPath>");
+                sb.AppendLine("        <Private>false</Private>");
+                sb.AppendLine("    </Reference>");
+            }
+            sb.AppendLine("  </ItemGroup>");
         }
     }
 
