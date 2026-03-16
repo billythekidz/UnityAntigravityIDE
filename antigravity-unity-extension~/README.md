@@ -5,10 +5,6 @@
 [![Open VSX Rating](https://img.shields.io/open-vsx/rating/antigravity-unity/antigravity-unity?color=orange)](https://open-vsx.org/extension/antigravity-unity/antigravity-unity#review-details)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-<a href='https://ko-fi.com/Y8Y61ABMM' target='_blank'>
-  <img width='250' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
-</a>
-
 ## The Problem
 
 Microsoft's official **C#**, **C# Dev Kit**, and **Unity** extensions are **licensed exclusively for Visual Studio Code**. If you're using Antigravity IDE, VSCodium, or any other VS Code fork — you simply cannot install them. No IntelliSense, no debugging, no go-to-definition. You're stuck with a fancy text editor.
@@ -61,6 +57,10 @@ A small Unity package that generates optimized project files for fast IntelliSen
 5. Done. IntelliSense should be working. If not, run `Developer: Reload Window`.
 
 ---
+
+<a href='https://ko-fi.com/Y8Y61ABMM' target='_blank'>
+  <img width='400' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
+</a>
 
 ## ✨ What You Get
 
