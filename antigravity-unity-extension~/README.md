@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <a href='https://ko-fi.com/Y8Y61ABMM' target='_blank'>
-  <img width='300' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
+  <img width='200' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
 </a>
 
 ## The Problem
@@ -63,7 +63,7 @@ A small Unity package that generates optimized project files for fast IntelliSen
 ---
 
 <a href='https://ko-fi.com/Y8Y61ABMM' target='_blank'>
-  <img width='400' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
+  <img width='300' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' alt='Support me on Ko-fi' />
 </a>
 
 ## ✨ What You Get
