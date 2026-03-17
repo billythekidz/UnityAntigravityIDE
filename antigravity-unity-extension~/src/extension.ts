@@ -124,9 +124,26 @@ function injectDotnetPath(): void {
     }
 
     for (const dir of candidates) {
-        if (fs.existsSync(path.join(dir, dotnetExe))) {
+        const dotnetFullPath = path.join(dir, dotnetExe);
+        if (fs.existsSync(dotnetFullPath)) {
             process.env.PATH = dir + pathSep + currentPath;
+
+            // DotRush's MSBuild locator probes these env vars to find dotnet.
+            // Setting PATH alone isn't enough — DotRush Language Server runs as
+            // a child process and its MSBuildLocator checks DOTNET_ROOT first.
+            if (!process.env.DOTNET_ROOT) {
+                process.env.DOTNET_ROOT = dir;
+            }
+            if (!process.env.DOTNET_HOST_PATH) {
+                process.env.DOTNET_HOST_PATH = dotnetFullPath;
+            }
+            // Also set DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR for older SDK versions
+            if (!process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR) {
+                process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR = dir;
+            }
+
             console.log(`[Antigravity Unity] Injected dotnet PATH: ${dir}`);
+            console.log(`[Antigravity Unity] Set DOTNET_ROOT=${dir}`);
             return;
         }
     }

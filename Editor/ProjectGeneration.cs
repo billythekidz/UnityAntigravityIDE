@@ -13,7 +13,7 @@ public static class ProjectGeneration
 {
     // ✅ LEARN: Full exclude list from com.unity.ide.vscode (30+ patterns)
     private const string SettingsJsonTemplate = @"{{
-    ""dotnet.defaultSolution"": ""{0}"",{2}
+    ""dotnet.defaultSolution"": ""{0}"",{2}{3}
     ""dotrush.msbuildProperties"": {{
         ""DefineConstants"": ""UNITY_EDITOR""
     }},
@@ -501,12 +501,22 @@ public static class ProjectGeneration
         // Use `which dotnet` (macOS/Linux) or `where dotnet` (Windows) to detect,
         // with hardcoded fallback paths if the shell command fails.
         string dotnetPathEntry = "";
+        string dotnetSdkDirEntry = "";
         string detectedDotnet = DetectDotnetPath();
         if (!string.IsNullOrEmpty(detectedDotnet))
         {
             dotnetPathEntry = $"\n    \"dotnet.dotnetPath\": \"{detectedDotnet.Replace("\\", "/")}\",";
+
+            // DotRush needs the SDK directory to locate MSBuild.
+            // GUI apps on macOS don't inherit shell PATH, so DotRush can't find dotnet
+            // even when dotnet.dotnetPath is set — it needs dotrush.roslyn.dotnetSdkDirectory.
+            string dotnetSdkDir = DetectDotnetSdkDirectory(detectedDotnet);
+            if (!string.IsNullOrEmpty(dotnetSdkDir))
+            {
+                dotnetSdkDirEntry = $"\n    \"dotrush.roslyn.dotnetSdkDirectory\": \"{dotnetSdkDir.Replace("\\", "/")}\",";
+            }
         }
-        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath, dotnetPathEntry);
+        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath, dotnetPathEntry, dotnetSdkDirEntry);
         WriteFileIfChanged(settingsPath, settingsContent);
 
         // launch.json — only create if not present (user may customize)
@@ -670,6 +680,70 @@ public static class ProjectGeneration
         {
             if (File.Exists(path)) return path;
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Detects the .NET SDK directory (e.g. /usr/local/share/dotnet/sdk/9.0.306)
+    /// from the dotnet executable path. DotRush needs this to locate MSBuild.
+    /// </summary>
+    private static string DetectDotnetSdkDirectory(string dotnetPath)
+    {
+        if (string.IsNullOrEmpty(dotnetPath)) return null;
+
+        try
+        {
+            // Run `dotnet --list-sdks` to get installed SDKs
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = dotnetPath;
+            process.StartInfo.Arguments = "--list-sdks";
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+            process.Start();
+
+            // Each line is like: "9.0.306 [/usr/local/share/dotnet/sdk]"
+            string lastLine = null;
+            string line;
+            while ((line = process.StandardOutput.ReadLine()) != null)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                    lastLine = line; // Take the latest (highest version)
+            }
+            process.WaitForExit(3000);
+
+            if (!string.IsNullOrEmpty(lastLine))
+            {
+                // Parse: "9.0.306 [/usr/local/share/dotnet/sdk]"
+                int bracketStart = lastLine.IndexOf('[');
+                int bracketEnd = lastLine.IndexOf(']');
+                string version = lastLine.Substring(0, lastLine.IndexOf(' ')).Trim();
+                if (bracketStart >= 0 && bracketEnd > bracketStart)
+                {
+                    string sdkBase = lastLine.Substring(bracketStart + 1, bracketEnd - bracketStart - 1);
+                    string sdkDir = Path.Combine(sdkBase, version);
+                    if (Directory.Exists(sdkDir))
+                        return sdkDir;
+                }
+            }
+        }
+        catch { /* Failed to detect SDK directory */ }
+
+        // Fallback: probe common paths relative to dotnet executable
+        string dotnetRoot = Path.GetDirectoryName(dotnetPath);
+        if (!string.IsNullOrEmpty(dotnetRoot))
+        {
+            string sdkBaseDir = Path.Combine(dotnetRoot, "sdk");
+            if (Directory.Exists(sdkBaseDir))
+            {
+                var sdkVersions = Directory.GetDirectories(sdkBaseDir)
+                    .OrderByDescending(d => d)
+                    .FirstOrDefault();
+                if (sdkVersions != null)
+                    return sdkVersions;
+            }
+        }
+
         return null;
     }
 
