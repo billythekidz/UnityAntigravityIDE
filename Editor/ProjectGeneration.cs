@@ -13,7 +13,7 @@ public static class ProjectGeneration
 {
     // ✅ LEARN: Full exclude list from com.unity.ide.vscode (30+ patterns)
     private const string SettingsJsonTemplate = @"{{
-    ""dotnet.defaultSolution"": ""{0}"",
+    ""dotnet.defaultSolution"": ""{0}"",{2}
     ""dotrush.msbuildProperties"": {{
         ""DefineConstants"": ""UNITY_EDITOR""
     }},
@@ -339,11 +339,15 @@ public static class ProjectGeneration
 
         sb.AppendLine("  </ItemGroup>");
 
-        // Source files
+        // Source files — resolve Unity virtual paths to real filesystem paths.
+        // Unity API returns paths like "Packages/com.foo/Editor/Bar.cs" which only exist
+        // inside Unity's virtual filesystem. MSBuild/DotRush can't find these on disk.
+        // We use PackageInfo to map "Packages/com.foo" → real resolved path.
         sb.AppendLine("  <ItemGroup>");
         foreach (var sourceFile in assembly.sourceFiles)
         {
-            sb.AppendLine($"    <Compile Include=\"{sourceFile.Replace("\\", "/")}\" />");
+            string resolvedPath = ResolveSourceFilePath(sourceFile);
+            sb.AppendLine($"    <Compile Include=\"{resolvedPath.Replace("\\", "/")}\" />");
         }
         sb.AppendLine("  </ItemGroup>");
 
@@ -493,7 +497,16 @@ public static class ProjectGeneration
         string solutionName = Path.GetFileName(projectDir);
         string solutionFile = $"{solutionName}.sln";
         string solutionAbsPath = Path.Combine(projectDir, solutionFile).Replace("\\", "/");
-        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath);
+        // GUI apps may not inherit shell PATH, so DotRush can't find dotnet.
+        // Use `which dotnet` (macOS/Linux) or `where dotnet` (Windows) to detect,
+        // with hardcoded fallback paths if the shell command fails.
+        string dotnetPathEntry = "";
+        string detectedDotnet = DetectDotnetPath();
+        if (!string.IsNullOrEmpty(detectedDotnet))
+        {
+            dotnetPathEntry = $"\n    \"dotnet.dotnetPath\": \"{detectedDotnet.Replace("\\", "/")}\",";
+        }
+        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath, dotnetPathEntry);
         WriteFileIfChanged(settingsPath, settingsContent);
 
         // launch.json — only create if not present (user may customize)
@@ -511,8 +524,66 @@ public static class ProjectGeneration
         string projectDir = Directory.GetCurrentDirectory();
         string propsPath = Path.Combine(projectDir, "Directory.Build.props");
 
-        if (File.Exists(propsPath)) return;
+        // Detect Unity's reference assemblies path (works cross-platform)
+        // EditorApplication.applicationContentsPath gives us:
+        //   macOS:   /Applications/Unity/Hub/Editor/X.Y.Z/Unity.app/Contents
+        //   Windows: C:\Program Files\Unity\Hub\Editor\X.Y.Z\Editor\Data
+        //   Linux:   /opt/unity/editor/Data
+        string unityRefAssembliesPath = Path.Combine(
+            EditorApplication.applicationContentsPath,
+            "Resources", "Scripting", "UnityReferenceAssemblies", "unity-4.8-api");
+        unityRefAssembliesPath = unityRefAssembliesPath.Replace("\\", "/");
+        bool hasRefAssemblies = Directory.Exists(unityRefAssembliesPath);
 
+        if (File.Exists(propsPath))
+        {
+            // File exists — ensure FrameworkPathOverride is present
+            string existing = File.ReadAllText(propsPath);
+            if (hasRefAssemblies && !existing.Contains("FrameworkPathOverride"))
+            {
+                // Inject FrameworkPathOverride before the closing </PropertyGroup>
+                string injection =
+                    $"\n    <!-- Auto-generated: Point MSBuild to Unity's bundled reference assemblies\n" +
+                    $"         so DotRush can compile without Mono or .NET Framework SDK -->\n" +
+                    $"    <FrameworkPathOverride>{unityRefAssembliesPath}</FrameworkPathOverride>\n";
+
+                // Find first </PropertyGroup> and inject before it
+                int insertPos = existing.IndexOf("</PropertyGroup>", StringComparison.Ordinal);
+                if (insertPos >= 0)
+                {
+                    string updated = existing.Insert(insertPos, injection);
+                    WriteFileIfChanged(propsPath, updated);
+                }
+            }
+            else if (hasRefAssemblies && existing.Contains("FrameworkPathOverride"))
+            {
+                // Update existing FrameworkPathOverride if path changed
+                // (e.g. Unity version upgrade)
+                var lines = existing.Split('\n');
+                bool changed = false;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i].Contains("<FrameworkPathOverride>") && !lines[i].Contains(unityRefAssembliesPath))
+                    {
+                        int start = lines[i].IndexOf("<FrameworkPathOverride>", StringComparison.Ordinal);
+                        int end = lines[i].IndexOf("</FrameworkPathOverride>", StringComparison.Ordinal);
+                        if (start >= 0 && end > start)
+                        {
+                            string indent = lines[i].Substring(0, start);
+                            lines[i] = $"{indent}<FrameworkPathOverride>{unityRefAssembliesPath}</FrameworkPathOverride>";
+                            changed = true;
+                        }
+                    }
+                }
+                if (changed)
+                {
+                    WriteFileIfChanged(propsPath, string.Join("\n", lines));
+                }
+            }
+            return;
+        }
+
+        // Create new file
         var sb = new StringBuilder();
         sb.AppendLine("<Project>");
         sb.AppendLine("  <PropertyGroup>");
@@ -520,10 +591,86 @@ public static class ProjectGeneration
         sb.AppendLine("    <!-- Suppress Unity-specific false positives -->");
         sb.AppendLine("    <!-- IDE0051: Remove unused private members (Unity messages like Start, Update) -->");
         sb.AppendLine("    <!-- IDE0044: Add readonly modifier (serialized fields) -->");
+
+        if (hasRefAssemblies)
+        {
+            sb.AppendLine();
+            sb.AppendLine("    <!-- Auto-generated: Point MSBuild to Unity's bundled reference assemblies");
+            sb.AppendLine("         so DotRush can compile without Mono or .NET Framework SDK -->");
+            sb.AppendLine($"    <FrameworkPathOverride>{unityRefAssembliesPath}</FrameworkPathOverride>");
+        }
+
         sb.AppendLine("  </PropertyGroup>");
         sb.AppendLine("</Project>");
 
         File.WriteAllText(propsPath, sb.ToString());
+    }
+
+    /// <summary>
+    /// Detects dotnet SDK path using shell commands, with hardcoded fallbacks.
+    /// macOS/Linux: `which dotnet` via /bin/bash
+    /// Windows: `where dotnet` via cmd.exe
+    /// </summary>
+    private static string DetectDotnetPath()
+    {
+        // Try shell command first
+        try
+        {
+            var process = new System.Diagnostics.Process();
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                process.StartInfo.FileName = "cmd.exe";
+                process.StartInfo.Arguments = "/c where dotnet";
+            }
+            else // macOS & Linux
+            {
+                process.StartInfo.FileName = "/bin/bash";
+                process.StartInfo.Arguments = "-l -c \"which dotnet\"";
+            }
+
+            process.Start();
+            string output = process.StandardOutput.ReadLine()?.Trim();
+            process.WaitForExit(3000);
+
+            if (!string.IsNullOrEmpty(output) && File.Exists(output))
+                return output;
+        }
+        catch { /* Shell command failed, try fallbacks */ }
+
+        // Fallback: check common installation paths
+        string[] fallbacks;
+        if (Application.platform == RuntimePlatform.OSXEditor)
+        {
+            fallbacks = new[] {
+                "/usr/local/share/dotnet/dotnet",
+                "/opt/homebrew/bin/dotnet"
+            };
+        }
+        else if (Application.platform == RuntimePlatform.WindowsEditor)
+        {
+            fallbacks = new[] {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "dotnet.exe"),
+                @"C:\Program Files\dotnet\dotnet.exe"
+            };
+        }
+        else
+        {
+            fallbacks = new[] {
+                "/usr/share/dotnet/dotnet",
+                "/usr/bin/dotnet",
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dotnet", "dotnet")
+            };
+        }
+
+        foreach (var path in fallbacks)
+        {
+            if (File.Exists(path)) return path;
+        }
+        return null;
     }
 
     // ✅ LEARN: WriteFileIfChanged — only write if content changed (avoids hot-reload)
@@ -910,6 +1057,46 @@ public static class ProjectGeneration
         }
 
         return analyzers.Distinct().ToList();
+    }
+
+    /// <summary>
+    /// Resolves Unity virtual paths like "Packages/com.foo/Editor/Bar.cs" to real filesystem paths.
+    /// Unity's CompilationPipeline returns source files using Unity's virtual "Packages/" prefix,
+    /// which maps to the package's resolved location on disk. MSBuild/DotRush can't find these
+    /// virtual paths, so we resolve them using PackageInfo.
+    /// Paths starting with "Assets/" are already relative to the project root and need no resolution.
+    /// </summary>
+    private static string ResolveSourceFilePath(string sourcePath)
+    {
+        // Only "Packages/" paths need resolution — "Assets/" paths are already correct
+        if (!sourcePath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
+            return sourcePath;
+
+        try
+        {
+            // Use Unity's PackageInfo to find the real resolved path for this asset
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(sourcePath);
+            if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+            {
+                // sourcePath:  "Packages/com.foo/Editor/Bar.cs"
+                // packageInfo.assetPath: "Packages/com.foo"
+                // packageInfo.resolvedPath: "/Users/xx/GitHub/MyPackage" (real path)
+                // We need to replace the "Packages/com.foo" prefix with the resolved path
+                string packageAssetPath = packageInfo.assetPath; // e.g. "Packages/com.foo"
+                if (sourcePath.StartsWith(packageAssetPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    string relativePart = sourcePath.Substring(packageAssetPath.Length); // e.g. "/Editor/Bar.cs"
+                    return packageInfo.resolvedPath.Replace("\\", "/") + relativePart;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Antigravity] Failed to resolve package path '{sourcePath}': {ex.Message}");
+        }
+
+        // Fallback: return original path
+        return sourcePath;
     }
 
     private static string GenerateGuid(string input)

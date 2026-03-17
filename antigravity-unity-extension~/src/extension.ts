@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { registerCompletionProviders } from './completion/unityCompletions';
 import { registerCommands } from './commands/commands';
 // import { registerCsprojFixer } from './csproj/csprojFixer'; // Disabled: interferes with DotRush compilation
@@ -6,6 +8,10 @@ import { registerCommands } from './commands/commands';
 const DOTRUSH_EXTENSION_ID = 'nromanov.dotrush';
 
 export async function activate(context: vscode.ExtensionContext) {
+    // MUST be first: inject dotnet into PATH before DotRush tries to spawn it.
+    // GUI apps on macOS/Linux don't inherit shell PATH, causing 'spawn dotnet ENOENT'.
+    injectDotnetPath();
+
     console.log('[Antigravity Unity] Extension activated');
 
     // Auto-install DotRush if not present
@@ -72,6 +78,60 @@ async function ensureDotRushInstalled(): Promise<void> {
             );
         }
     }
+}
+
+/**
+ * Detects dotnet SDK installation and injects its directory into process.env.PATH.
+ * All VS Code extensions share the same extension host process, so modifying
+ * process.env.PATH here makes `dotnet` available to DotRush's spawn() calls.
+ */
+function injectDotnetPath(): void {
+    // Check if dotnet is already in PATH
+    const currentPath = process.env.PATH || '';
+    const pathSep = process.platform === 'win32' ? ';' : ':';
+    const dotnetExe = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
+
+    // Check if dotnet is already reachable
+    const dirs = currentPath.split(pathSep);
+    for (const dir of dirs) {
+        if (dir && fs.existsSync(path.join(dir, dotnetExe))) {
+            console.log(`[Antigravity Unity] dotnet found in PATH: ${dir}`);
+            return; // Already accessible, no injection needed
+        }
+    }
+
+    // Candidate directories per platform
+    let candidates: string[];
+    if (process.platform === 'darwin') {
+        candidates = [
+            '/usr/local/share/dotnet',
+            '/opt/homebrew/bin',
+        ];
+    } else if (process.platform === 'win32') {
+        const pf = process.env['ProgramFiles'] || 'C:\\Program Files';
+        candidates = [
+            path.join(pf, 'dotnet'),
+        ];
+    } else {
+        // Linux
+        const home = process.env['HOME'] || '';
+        candidates = [
+            '/usr/share/dotnet',
+            '/usr/bin',
+            '/snap/bin',
+            path.join(home, '.dotnet'),
+        ];
+    }
+
+    for (const dir of candidates) {
+        if (fs.existsSync(path.join(dir, dotnetExe))) {
+            process.env.PATH = dir + pathSep + currentPath;
+            console.log(`[Antigravity Unity] Injected dotnet PATH: ${dir}`);
+            return;
+        }
+    }
+
+    console.warn('[Antigravity Unity] dotnet not found. DotRush may not work correctly.');
 }
 
 export function deactivate() {
