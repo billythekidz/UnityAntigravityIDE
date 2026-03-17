@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { registerCompletionProviders } from './completion/unityCompletions';
 import { registerCommands } from './commands/commands';
-import { registerCsprojFixer } from './csproj/csprojFixer';
+// import { registerCsprojFixer } from './csproj/csprojFixer'; // Disabled: interferes with DotRush compilation
 
 const DOTRUSH_EXTENSION_ID = 'nromanov.dotrush';
 
@@ -14,7 +14,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Register all features (debugging handled by DotRush)
     registerCompletionProviders(context);
     registerCommands(context);
-    registerCsprojFixer(context);
+    // registerCsprojFixer(context); // Disabled: interferes with DotRush compilation
 
     // Show status bar item
     const statusBarItem = vscode.window.createStatusBarItem(

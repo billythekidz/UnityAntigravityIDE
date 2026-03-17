@@ -17,6 +17,9 @@ public static class ProjectGeneration
     ""dotrush.msbuildProperties"": {{
         ""DefineConstants"": ""UNITY_EDITOR""
     }},
+    ""dotrush.roslyn.projectOrSolutionFiles"": [
+        ""{1}""
+    ],
     ""files.exclude"": {{
         ""**/.DS_Store"": true,
         ""**/.git"": true,
@@ -386,6 +389,7 @@ public static class ProjectGeneration
                 if (File.Exists(dllPath))
                 {
                     refsWithDll.Add((refAssembly.name, dllPath));
+                    referencedNames.Add(refAssembly.name); // Track for sibling matching
                 }
             }
 
@@ -487,7 +491,9 @@ public static class ProjectGeneration
         // settings.json — always regenerate to keep up to date
         string settingsPath = Path.Combine(vscodeDir, "settings.json");
         string solutionName = Path.GetFileName(projectDir);
-        string settingsContent = string.Format(SettingsJsonTemplate, $"{solutionName}.sln");
+        string solutionFile = $"{solutionName}.sln";
+        string solutionAbsPath = Path.Combine(projectDir, solutionFile).Replace("\\", "/");
+        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath);
         WriteFileIfChanged(settingsPath, settingsContent);
 
         // launch.json — only create if not present (user may customize)
