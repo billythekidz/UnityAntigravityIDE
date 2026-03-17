@@ -204,6 +204,26 @@ def main():
     info(f"Commit: {commit_msg}")
     info(f"Release title: {release_title}")
 
+    # 3b. Update CHANGELOG.md
+    changelog_path = os.path.join(EXTENSION_DIR, "CHANGELOG.md")
+    warn("Updating CHANGELOG.md...")
+    new_entry = f"\n## v{new_version}\n- {description}\n"
+    if os.path.isfile(changelog_path):
+        with open(changelog_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        # Insert new entry before the first version heading (## v...)
+        first_version = content.find("\n## v")
+        if first_version >= 0:
+            content = content[:first_version] + new_entry + content[first_version:]
+        else:
+            content = content.rstrip() + "\n" + new_entry
+    else:
+        content = "# Changelog\n\nAll notable changes to the Antigravity Unity extension will be documented in this file.\n" + new_entry
+
+    with open(changelog_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    ok(f"CHANGELOG.md updated with v{new_version}")
+
     # 4. Package extension
     warn("Packaging Extension...")
     vsix_name = f"antigravity-unity-{new_version}.vsix"

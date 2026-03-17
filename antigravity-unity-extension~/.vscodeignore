@@ -2,10 +2,11 @@
 **/**
 !package.json
 !README.md
+!CHANGELOG.md
 !LICENSE
 !out/**
 !snippets/**
 !syntaxes/**
 !language-configuration/**
-!assets/**
+!assets/icon.png
 release-extension.ps1

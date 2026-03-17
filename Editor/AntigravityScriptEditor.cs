@@ -338,6 +338,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
             EditorPrefs.DeleteKey(PrefKey_AnalyzerLevel);
             EditorPrefs.DeleteKey(PrefKey_Arguments);
             EditorPrefs.DeleteKey(PrefKey_Extensions);
+
             UnityEngine.Debug.Log("[Antigravity] Settings reset to defaults.");
         }
         EditorGUILayout.EndHorizontal();

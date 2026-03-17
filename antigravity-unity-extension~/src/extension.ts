@@ -33,6 +33,7 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
+
     console.log('[Antigravity Unity] All features registered');
 }
 
@@ -185,6 +186,8 @@ function applyDotnetEnv(dir: string, fullPath: string, currentPath: string, path
         process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR = dir;
     }
 }
+
+
 
 export function deactivate() {
     console.log('[Antigravity Unity] Extension deactivated');
