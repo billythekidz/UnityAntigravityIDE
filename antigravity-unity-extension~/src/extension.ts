@@ -81,26 +81,37 @@ async function ensureDotRushInstalled(): Promise<void> {
 }
 
 /**
- * Detects dotnet SDK installation and injects its directory into process.env.PATH.
- * All VS Code extensions share the same extension host process, so modifying
- * process.env.PATH here makes `dotnet` available to DotRush's spawn() calls.
+ * Detects dotnet SDK installation and injects its directory into process.env.
+ * Strategy: 1) check current PATH, 2) try `which`/`where` shell command
+ * (gets user's login shell PATH), 3) fall back to hardcoded candidates.
+ * Sets PATH, DOTNET_ROOT, DOTNET_HOST_PATH, DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR
+ * so DotRush can find dotnet for MSBuild and `dotnet restore`.
  */
 function injectDotnetPath(): void {
-    // Check if dotnet is already in PATH
     const currentPath = process.env.PATH || '';
     const pathSep = process.platform === 'win32' ? ';' : ':';
     const dotnetExe = process.platform === 'win32' ? 'dotnet.exe' : 'dotnet';
 
-    // Check if dotnet is already reachable
-    const dirs = currentPath.split(pathSep);
-    for (const dir of dirs) {
+    // 1) Check if dotnet is already reachable in current PATH
+    for (const dir of currentPath.split(pathSep)) {
         if (dir && fs.existsSync(path.join(dir, dotnetExe))) {
+            applyDotnetEnv(dir, path.join(dir, dotnetExe), currentPath, pathSep);
             console.log(`[Antigravity Unity] dotnet found in PATH: ${dir}`);
-            return; // Already accessible, no injection needed
+            return;
         }
     }
 
-    // Candidate directories per platform
+    // 2) Try shell detection: `which dotnet` (macOS/Linux) or `where dotnet` (Windows)
+    //    Login shell (-l) inherits user's full PATH from .zshrc/.bashrc/.bash_profile
+    const detected = detectDotnetViaShell();
+    if (detected && fs.existsSync(detected)) {
+        const dir = path.dirname(detected);
+        applyDotnetEnv(dir, detected, currentPath, pathSep);
+        console.log(`[Antigravity Unity] dotnet detected via shell: ${detected}`);
+        return;
+    }
+
+    // 3) Fallback: hardcoded candidate directories per platform
     let candidates: string[];
     if (process.platform === 'darwin') {
         candidates = [
@@ -113,7 +124,6 @@ function injectDotnetPath(): void {
             path.join(pf, 'dotnet'),
         ];
     } else {
-        // Linux
         const home = process.env['HOME'] || '';
         candidates = [
             '/usr/share/dotnet',
@@ -126,29 +136,54 @@ function injectDotnetPath(): void {
     for (const dir of candidates) {
         const dotnetFullPath = path.join(dir, dotnetExe);
         if (fs.existsSync(dotnetFullPath)) {
-            process.env.PATH = dir + pathSep + currentPath;
-
-            // DotRush's MSBuild locator probes these env vars to find dotnet.
-            // Setting PATH alone isn't enough — DotRush Language Server runs as
-            // a child process and its MSBuildLocator checks DOTNET_ROOT first.
-            if (!process.env.DOTNET_ROOT) {
-                process.env.DOTNET_ROOT = dir;
-            }
-            if (!process.env.DOTNET_HOST_PATH) {
-                process.env.DOTNET_HOST_PATH = dotnetFullPath;
-            }
-            // Also set DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR for older SDK versions
-            if (!process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR) {
-                process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR = dir;
-            }
-
-            console.log(`[Antigravity Unity] Injected dotnet PATH: ${dir}`);
-            console.log(`[Antigravity Unity] Set DOTNET_ROOT=${dir}`);
+            applyDotnetEnv(dir, dotnetFullPath, currentPath, pathSep);
+            console.log(`[Antigravity Unity] dotnet found at fallback: ${dir}`);
             return;
         }
     }
 
     console.warn('[Antigravity Unity] dotnet not found. DotRush may not work correctly.');
+}
+
+/** Run `which dotnet` (macOS/Linux) or `where dotnet` (Windows) via login shell. */
+function detectDotnetViaShell(): string | null {
+    const { execSync } = require('child_process');
+    try {
+        let cmd: string;
+        if (process.platform === 'win32') {
+            cmd = 'where dotnet';
+        } else {
+            // Login shell (-l) to pick up PATH from .zshrc / .bashrc / .profile
+            cmd = '/bin/bash -l -c "which dotnet"';
+        }
+        const result = execSync(cmd, { timeout: 3000, encoding: 'utf8' });
+        const firstLine = result.split('\n')[0]?.trim();
+        if (firstLine && path.isAbsolute(firstLine)) {
+            // Resolve symlinks to get the real dotnet directory
+            return fs.realpathSync(firstLine);
+        }
+    } catch {
+        // Shell command failed — not installed or not in shell PATH
+    }
+    return null;
+}
+
+/** Apply dotnet environment variables so DotRush can find MSBuild and run `dotnet restore`. */
+function applyDotnetEnv(dir: string, fullPath: string, currentPath: string, pathSep: string): void {
+    // Ensure dotnet dir is in PATH
+    if (!currentPath.split(pathSep).includes(dir)) {
+        process.env.PATH = dir + pathSep + currentPath;
+    }
+    // DotRush's MSBuild locator probes these env vars to find dotnet
+    if (!process.env.DOTNET_ROOT) {
+        process.env.DOTNET_ROOT = dir;
+    }
+    if (!process.env.DOTNET_HOST_PATH) {
+        process.env.DOTNET_HOST_PATH = fullPath;
+    }
+    if (!process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR) {
+        process.env.DOTNET_MSBUILD_SDK_RESOLVER_CLI_DIR = dir;
+    }
 }
 
 export function deactivate() {
