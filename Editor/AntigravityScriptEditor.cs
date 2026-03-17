@@ -128,9 +128,11 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         var editor = new AntigravityScriptEditor();
         CodeEditor.Register(editor);
 
+        // Defer project file generation to avoid blocking domain reload / play mode entry.
+        // Static constructors run during InitializeOnLoad and block the editor if they do heavy work.
         if (IsAntigravityInstallation(CodeEditor.CurrentEditorInstallation))
         {
-            editor.CreateIfDoesntExist();
+            EditorApplication.delayCall += () => editor.CreateIfDoesntExist();
         }
     }
 
