@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.44
+- perf: fix slow play mode entry - skip unnecessary Sync on domain reload, cache dotnet detection
+
 ## v1.2.43
 - fix: add changelog to vsix, optimize icon size, revert watcherExclude
 

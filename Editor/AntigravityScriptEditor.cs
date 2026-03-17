@@ -247,7 +247,10 @@ public class AntigravityScriptEditor : IExternalCodeEditor
 
     public void Initialize(string editorInstallationPath)
     {
-        ProjectGeneration.Sync();
+        // PERF: Don't call full Sync() on every domain reload — it spawns shell
+        // processes and regenerates all project files, adding 500ms+ to Play mode entry.
+        // Only generate if .sln is missing (first time or after clean).
+        CreateIfDoesntExist();
     }
 
     public void OnGUI()

@@ -11,6 +11,12 @@ using UnityEngine.Profiling;
 
 public static class ProjectGeneration
 {
+    // PERF: Cache shell process results — dotnet path never changes during an editor session.
+    private static string s_CachedDotnetPath;
+    private static bool s_DotnetPathDetected;
+    private static string s_CachedDotnetSdkDir;
+    private static bool s_DotnetSdkDirDetected;
+
     // ✅ LEARN: Full exclude list from com.unity.ide.vscode (30+ patterns)
     private const string SettingsJsonTemplate = @"{{
     ""dotnet.defaultSolution"": ""{0}"",{2}{3}
@@ -623,6 +629,10 @@ public static class ProjectGeneration
     /// </summary>
     private static string DetectDotnetPath()
     {
+        // Return cached result if available
+        if (s_DotnetPathDetected) return s_CachedDotnetPath;
+        s_DotnetPathDetected = true;
+
         // Try shell command first
         try
         {
@@ -647,7 +657,10 @@ public static class ProjectGeneration
             process.WaitForExit(3000);
 
             if (!string.IsNullOrEmpty(output) && File.Exists(output))
+            {
+                s_CachedDotnetPath = output;
                 return output;
+            }
         }
         catch { /* Shell command failed, try fallbacks */ }
 
@@ -678,8 +691,13 @@ public static class ProjectGeneration
 
         foreach (var path in fallbacks)
         {
-            if (File.Exists(path)) return path;
+            if (File.Exists(path))
+            {
+                s_CachedDotnetPath = path;
+                return path;
+            }
         }
+        s_CachedDotnetPath = null;
         return null;
     }
 
@@ -689,7 +707,15 @@ public static class ProjectGeneration
     /// </summary>
     private static string DetectDotnetSdkDirectory(string dotnetPath)
     {
-        if (string.IsNullOrEmpty(dotnetPath)) return null;
+        // Return cached result if available
+        if (s_DotnetSdkDirDetected) return s_CachedDotnetSdkDir;
+        s_DotnetSdkDirDetected = true;
+
+        if (string.IsNullOrEmpty(dotnetPath))
+        {
+            s_CachedDotnetSdkDir = null;
+            return null;
+        }
 
         try
         {
@@ -723,7 +749,10 @@ public static class ProjectGeneration
                     string sdkBase = lastLine.Substring(bracketStart + 1, bracketEnd - bracketStart - 1);
                     string sdkDir = Path.Combine(sdkBase, version);
                     if (Directory.Exists(sdkDir))
+                    {
+                        s_CachedDotnetSdkDir = sdkDir;
                         return sdkDir;
+                    }
                 }
             }
         }
@@ -740,10 +769,14 @@ public static class ProjectGeneration
                     .OrderByDescending(d => d)
                     .FirstOrDefault();
                 if (sdkVersions != null)
+                {
+                    s_CachedDotnetSdkDir = sdkVersions;
                     return sdkVersions;
+                }
             }
         }
 
+        s_CachedDotnetSdkDir = null;
         return null;
     }
 
