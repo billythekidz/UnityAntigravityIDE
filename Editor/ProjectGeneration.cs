@@ -337,11 +337,8 @@ public static class ProjectGeneration
         // Unity's compiledAssemblyReferences may omit core assemblies (UnityEditor.dll,
         // UnityEngine.dll) because Unity resolves them implicitly. DotRush/Roslyn needs
         // explicit HintPath references to resolve types like MenuItem, EditorUtility, etc.
-        // (This issue seems specific to macOS, Windows resolves it correctly with prior logic)
-        if (Application.platform == RuntimePlatform.OSXEditor)
-        {
-            AppendCoreUnityReferences(sb, referencedNames);
-        }
+        // This is required on ALL platforms — not just macOS.
+        AppendCoreUnityReferences(sb, referencedNames);
 
         sb.AppendLine("  </ItemGroup>");
 
@@ -380,10 +377,10 @@ public static class ProjectGeneration
                 // Typically user scripts go to Library/ScriptAssemblies
                 string dllPath = Path.Combine(scriptAssembliesDir, $"{refAssembly.name}.dll");
                 
-                // If not found there, try the explicit output path provided by Unity
-                // (This is crucial for precompiled package assemblies or those generated elsewhere)
-                // Checking platform here to avoid changing Windows behavior which was already stable
-                if (Application.platform == RuntimePlatform.OSXEditor && !File.Exists(dllPath) && !string.IsNullOrEmpty(refAssembly.outputPath))
+                // If not found in ScriptAssemblies, try the explicit output path provided by Unity.
+                // This is crucial for precompiled package assemblies or those generated elsewhere.
+                // Required on ALL platforms — Unity may place assemblies outside ScriptAssemblies.
+                if (!File.Exists(dllPath) && !string.IsNullOrEmpty(refAssembly.outputPath))
                 {
                     // outputPath might be relative to project root or absolute
                     string fallbackPath = Path.IsPathRooted(refAssembly.outputPath) 
@@ -434,14 +431,12 @@ public static class ProjectGeneration
             }
         }
 
-        // macOS fix: Unity's CompilationPipeline may omit some package DLLs from both
+        // Unity's CompilationPipeline may omit some package DLLs from both
         // compiledAssemblyReferences and assemblyReferences (e.g. Unity.Purchasing.SecurityStub
         // which contains CrossPlatformValidator). Scan Library/ScriptAssemblies for any
         // DLLs not yet referenced. This is a flat directory listing (~96 files), negligible cost.
-        if (Application.platform == RuntimePlatform.OSXEditor)
-        {
-            AppendMissingScriptAssemblies(sb, referencedNames);
-        }
+        // Required on ALL platforms — not just macOS.
+        AppendMissingScriptAssemblies(sb, referencedNames);
 
         sb.AppendLine("  <Import Project=\"$(MSBuildToolsPath)\\Microsoft.CSharp.targets\" />");
         sb.AppendLine("</Project>");
@@ -981,12 +976,41 @@ public static class ProjectGeneration
     /// Ensures core Unity assemblies (UnityEditor.dll, UnityEngine.dll) are referenced.
     /// Unity's compiledAssemblyReferences may omit these because Unity links them implicitly,
     /// but Roslyn/DotRush needs explicit HintPath entries for type resolution.
+    /// 
+    /// Path layout per platform:
+    ///   Windows: {Editor}/Data/Managed/UnityEngine/UnityEditor.dll
+    ///   macOS:   {Contents}/Resources/Scripting/Managed/UnityEditor.dll
+    ///            {Contents}/Resources/Scripting/Managed/UnityEngine/UnityEditor.dll
+    ///   Linux:   {Editor}/Data/Managed/UnityEngine/UnityEditor.dll
     /// </summary>
     private static void AppendCoreUnityReferences(StringBuilder sb, HashSet<string> existingRefs)
     {
-        // Unity's managed assemblies location
-        string managedPath = Path.Combine(EditorApplication.applicationContentsPath,
-            "Resources", "Scripting", "Managed");
+        string contentsPath = EditorApplication.applicationContentsPath;
+
+        // Build candidate search paths per platform.
+        // EditorApplication.applicationContentsPath gives:
+        //   Windows: C:\Program Files\Unity\Hub\Editor\X.Y.Z\Editor\Data
+        //   macOS:   /Applications/Unity/Hub/Editor/X.Y.Z/Unity.app/Contents
+        //   Linux:   /opt/unity/editor/Data
+        string[] searchPaths;
+        if (Application.platform == RuntimePlatform.OSXEditor)
+        {
+            // macOS: look in both Resources/Scripting/Managed and Managed/UnityEngine
+            searchPaths = new[]
+            {
+                Path.Combine(contentsPath, "Resources", "Scripting", "Managed"),
+                Path.Combine(contentsPath, "Managed", "UnityEngine"),
+            };
+        }
+        else
+        {
+            // Windows/Linux: look in Managed and Managed/UnityEngine
+            searchPaths = new[]
+            {
+                Path.Combine(contentsPath, "Managed"),
+                Path.Combine(contentsPath, "Managed", "UnityEngine"),
+            };
+        }
 
         // Core assemblies that may be implicitly linked
         string[] coreAssemblies = new[] { "UnityEditor", "UnityEngine" };
@@ -995,17 +1019,23 @@ public static class ProjectGeneration
         {
             if (existingRefs.Contains(name)) continue;
 
-            // Check both direct and subfolder paths
-            string dllPath = Path.Combine(managedPath, $"{name}.dll");
-            if (!File.Exists(dllPath))
+            // Search all candidate paths
+            string foundPath = null;
+            foreach (var basePath in searchPaths)
             {
-                dllPath = Path.Combine(managedPath, "UnityEngine", $"{name}.dll");
+                string candidate = Path.Combine(basePath, $"{name}.dll");
+                if (File.Exists(candidate))
+                {
+                    foundPath = candidate;
+                    break;
+                }
             }
-            if (!File.Exists(dllPath)) continue;
+            if (foundPath == null) continue;
 
             sb.AppendLine($"    <Reference Include=\"{name}\">");
-            sb.AppendLine($"        <HintPath>{dllPath.Replace("\\", "/")}</HintPath>");
+            sb.AppendLine($"        <HintPath>{foundPath.Replace("\\", "/")}</HintPath>");
             sb.AppendLine("    </Reference>");
+            existingRefs.Add(name);
         }
     }
 
