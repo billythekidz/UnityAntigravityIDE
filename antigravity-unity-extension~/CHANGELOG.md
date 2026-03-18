@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.45
+- fix: resolve UnityEditor types on all platforms (remove macOS-only guards)
+
 ## v1.2.44
 - perf: fix slow play mode entry - skip unnecessary Sync on domain reload, cache dotnet detection
 
