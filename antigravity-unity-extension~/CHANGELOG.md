@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.46
+- fix: preserve user files.exclude on settings.json regeneration
+
 ## v1.2.45
 - fix: resolve UnityEditor types on all platforms (remove macOS-only guards)
 
