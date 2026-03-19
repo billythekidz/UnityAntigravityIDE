@@ -17,7 +17,7 @@ public static class ProjectGeneration
     private static string s_CachedDotnetSdkDir;
     private static bool s_DotnetSdkDirDetected;
 
-    // ✅ LEARN: Full exclude list from com.unity.ide.vscode (30+ patterns)
+    // Settings template with {4} placeholder for files.exclude block (preserved from user edits)
     private const string SettingsJsonTemplate = @"{{
     ""dotnet.defaultSolution"": ""{0}"",{2}{3}
     ""dotrush.msbuildProperties"": {{
@@ -26,7 +26,13 @@ public static class ProjectGeneration
     ""dotrush.roslyn.projectOrSolutionFiles"": [
         ""{1}""
     ],
-    ""files.exclude"": {{
+{4}
+}}";
+
+    // Default files.exclude block — used only when no existing settings.json is found.
+    // If the user has customized their files.exclude (e.g. un-hiding .asset, .unity, .prefab),
+    // their version is preserved across regenerations.
+    private const string DefaultFilesExclude = @"    ""files.exclude"": {
         ""**/.DS_Store"": true,
         ""**/.git"": true,
         ""**/.gitmodules"": true,
@@ -78,8 +84,7 @@ public static class ProjectGeneration
         ""temp/"": true,
         ""Temp/"": true,
         ""Logs/"": true
-    }}
-}}";
+    }";
 
     // ✅ LEARN: Updated launch.json to use DotRush "unity" type
     private const string LaunchJsonTemplate = @"{{
@@ -493,7 +498,8 @@ public static class ProjectGeneration
         if (!Directory.Exists(vscodeDir))
             Directory.CreateDirectory(vscodeDir);
 
-        // settings.json — always regenerate to keep up to date
+        // settings.json — always regenerate to keep DotRush config up to date,
+        // but PRESERVE the user's files.exclude customizations.
         string settingsPath = Path.Combine(vscodeDir, "settings.json");
         string solutionName = Path.GetFileName(projectDir);
         string solutionFile = $"{solutionName}.sln";
@@ -517,7 +523,27 @@ public static class ProjectGeneration
                 dotnetSdkDirEntry = $"\n    \"dotrush.roslyn.dotnetSdkDirectory\": \"{dotnetSdkDir.Replace("\\", "/")}\",";
             }
         }
-        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath, dotnetPathEntry, dotnetSdkDirEntry);
+
+        // Preserve user's files.exclude if they've customized it (e.g. un-hiding .asset, .unity, .prefab)
+        string filesExcludeBlock = DefaultFilesExclude;
+        if (File.Exists(settingsPath))
+        {
+            try
+            {
+                string existingContent = File.ReadAllText(settingsPath);
+                string extracted = ExtractFilesExcludeBlock(existingContent);
+                if (!string.IsNullOrEmpty(extracted))
+                {
+                    filesExcludeBlock = extracted;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Antigravity] Failed to read existing settings.json, using defaults: {ex.Message}");
+            }
+        }
+
+        string settingsContent = string.Format(SettingsJsonTemplate, solutionFile, solutionAbsPath, dotnetPathEntry, dotnetSdkDirEntry, filesExcludeBlock);
         WriteFileIfChanged(settingsPath, settingsContent);
 
         // launch.json — only create if not present (user may customize)
@@ -528,6 +554,62 @@ public static class ProjectGeneration
             string launchContent = string.Format(LaunchJsonTemplate, debugPort);
             File.WriteAllText(launchPath, launchContent);
         }
+    }
+
+    /// <summary>
+    /// Extracts the "files.exclude": { ... } block from an existing settings.json string.
+    /// Uses brace-counting to correctly handle nested objects.
+    /// Returns the full block including the key, or null if not found.
+    /// </summary>
+    private static string ExtractFilesExcludeBlock(string json)
+    {
+        // Find "files.exclude"
+        const string key = "\"files.exclude\"";
+        int keyIndex = json.IndexOf(key, StringComparison.Ordinal);
+        if (keyIndex < 0) return null;
+
+        // Find the opening brace after the key
+        int colonIndex = json.IndexOf(':', keyIndex + key.Length);
+        if (colonIndex < 0) return null;
+
+        int braceStart = json.IndexOf('{', colonIndex);
+        if (braceStart < 0) return null;
+
+        // Count braces to find the matching closing brace
+        int depth = 0;
+        int braceEnd = -1;
+        for (int i = braceStart; i < json.Length; i++)
+        {
+            if (json[i] == '{') depth++;
+            else if (json[i] == '}') depth--;
+
+            if (depth == 0)
+            {
+                braceEnd = i;
+                break;
+            }
+        }
+
+        if (braceEnd < 0) return null;
+
+        // Extract the block: find the indentation of the key line
+        int lineStart = keyIndex;
+        while (lineStart > 0 && json[lineStart - 1] != '\n')
+            lineStart--;
+
+        string indent = "";
+        for (int i = lineStart; i < keyIndex; i++)
+        {
+            if (json[i] == ' ' || json[i] == '\t')
+                indent += json[i];
+            else
+                break;
+        }
+
+        // Rebuild: capture from key through closing brace
+        string block = json.Substring(keyIndex, braceEnd - keyIndex + 1);
+
+        return indent + block;
     }
 
     private static void GenerateDirectoryBuildProps()
