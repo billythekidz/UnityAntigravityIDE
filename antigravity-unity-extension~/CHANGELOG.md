@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.48
+- fix: auto-reload DotRush workspace on .csproj changes from Unity
+
 ## v1.2.47
 - fix: auto-reload DotRush when .csproj changes (stale errors after script deletion)
 
