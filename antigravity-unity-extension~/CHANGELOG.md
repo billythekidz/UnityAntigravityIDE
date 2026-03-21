@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.51
+- chore: update ProjectGeneration.cs
+
 ## v1.2.50
 - fix: remove stale Compile entries from .csproj on .cs file deletion
 

@@ -119,6 +119,18 @@ public static class ProjectGeneration
         ".md", ".inputactions"
     };
 
+    /// <summary>
+    /// After Unity finishes compiling scripts, regenerate .csproj files.
+    /// This ensures stale <Compile> entries (from files deleted/renamed outside Unity)
+    /// are cleaned up once Unity's AssetDatabase catches up.
+    /// The .csproj change then triggers the VS Code extension watcher → DotRush reload.
+    /// </summary>
+    [UnityEditor.Callbacks.DidReloadScripts]
+    private static void OnScriptsReloaded()
+    {
+        Sync(isManual: false);
+    }
+
     public static void Sync(bool isManual = false)
     {
         Profiler.BeginSample("AntigravityProjectSync");
