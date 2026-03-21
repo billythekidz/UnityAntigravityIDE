@@ -17,6 +17,14 @@ public static class ProjectGeneration
     private static string s_CachedDotnetSdkDir;
     private static bool s_DotnetSdkDirDetected;
 
+    // Track whether any .csproj/.sln file was actually modified during this Sync() pass.
+    // WriteFileIfChanged sets this to true when content changes; Sync() reads and resets it.
+    private static bool s_ProjectFilesChanged;
+
+    // Marker file path: written after Sync() when project files changed.
+    // The VS Code extension watches for this file and auto-restarts DotRush.
+    private const string k_CsprojChangedMarker = ".vscode/.csproj-changed";
+
     // Settings template with {4} placeholder for files.exclude block (preserved from user edits)
     private const string SettingsJsonTemplate = @"{{
     ""dotnet.defaultSolution"": ""{0}"",{2}{3}
@@ -119,6 +127,11 @@ public static class ProjectGeneration
     public static void Sync(bool isManual = false)
     {
         Profiler.BeginSample("AntigravityProjectSync");
+
+        // Reset change tracking — WriteFileIfChanged will set this to true
+        // if any .csproj or .sln content actually changed on disk.
+        s_ProjectFilesChanged = false;
+
         // Get ALL assemblies: Player (includes tests) + Editor
         var playerAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Player);
         var editorAssemblies = CompilationPipeline.GetAssemblies(AssembliesType.Editor);
@@ -148,6 +161,16 @@ public static class ProjectGeneration
         GenerateDirectoryBuildProps();
 
         OnGeneratedCSProjectFiles();
+
+        // If any project file actually changed, write a marker file so the
+        // VS Code extension can detect the change and restart DotRush.
+        // This is the key fix for "deleted scripts still show errors" —
+        // DotRush caches the solution in memory and needs a restart to pick up
+        // .csproj changes (added/removed <Compile> entries).
+        if (s_ProjectFilesChanged)
+        {
+            WriteCsprojChangedMarker();
+        }
 
         Profiler.EndSample();
 
@@ -870,6 +893,34 @@ public static class ProjectGeneration
             Debug.LogException(ex);
         }
         File.WriteAllText(path, newContents);
+        s_ProjectFilesChanged = true;
+    }
+
+    /// <summary>
+    /// Writes a marker file that the VS Code extension watches.
+    /// When the extension detects this file, it auto-restarts DotRush's language server
+    /// so Roslyn picks up the new .csproj contents (added/removed source files).
+    /// The marker is a lightweight trigger — the extension deletes it after processing.
+    /// </summary>
+    private static void WriteCsprojChangedMarker()
+    {
+        try
+        {
+            string projectDir = Directory.GetCurrentDirectory();
+            string markerPath = Path.Combine(projectDir, k_CsprojChangedMarker);
+
+            // Ensure .vscode directory exists
+            string vscodeDir = Path.GetDirectoryName(markerPath);
+            if (!Directory.Exists(vscodeDir))
+                Directory.CreateDirectory(vscodeDir);
+
+            // Write timestamp so the watcher always detects a change
+            File.WriteAllText(markerPath, DateTime.UtcNow.ToString("O"));
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[Antigravity] Failed to write csproj-changed marker: {ex.Message}");
+        }
     }
 
     // ✅ LEARN: AssetPostprocessor callbacks from com.unity.ide.vscode

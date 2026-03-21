@@ -22,6 +22,9 @@ export async function activate(context: vscode.ExtensionContext) {
     registerCommands(context);
     // registerCsprojFixer(context); // Disabled: interferes with DotRush compilation
 
+    // Watch for .csproj changes from Unity and auto-restart DotRush
+    setupCsprojChangeWatcher(context);
+
     // Show status bar item
     const statusBarItem = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Left,
@@ -187,6 +190,71 @@ function applyDotnetEnv(dir: string, fullPath: string, currentPath: string, path
     }
 }
 
+/**
+ * Watches for `.vscode/.csproj-changed` marker file written by Unity's ProjectGeneration.
+ * When detected, auto-restarts DotRush language server so Roslyn picks up .csproj changes
+ * (e.g. removed <Compile> entries after deleting a script). Without this, DotRush would
+ * continue showing errors for deleted files until manually restarted.
+ * 
+ * Flow: Unity deletes script → AssetPostprocessor → SyncIfNeeded → Sync() →
+ *       WriteFileIfChanged detects .csproj changed → WriteCsprojChangedMarker() →
+ *       this watcher fires → restart DotRush → diagnostics refresh → stale errors gone.
+ */
+function setupCsprojChangeWatcher(context: vscode.ExtensionContext): void {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        return;
+    }
+
+    // Watch for the marker file in each workspace folder
+    for (const folder of workspaceFolders) {
+        const markerPattern = new vscode.RelativePattern(folder, '.vscode/.csproj-changed');
+        const watcher = vscode.workspace.createFileSystemWatcher(markerPattern);
+
+        // Debounce timer to avoid multiple rapid restarts
+        // (Unity may trigger Sync() several times in quick succession)
+        let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const handleMarkerChange = (uri: vscode.Uri) => {
+            // Clear any pending restart
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            // Wait 1.5s for all writes to settle before restarting
+            debounceTimer = setTimeout(async () => {
+                debounceTimer = null;
+
+                console.log('[Antigravity Unity] .csproj change detected — restarting DotRush...');
+
+                try {
+                    // Delete the marker file first to prevent re-triggering
+                    await vscode.workspace.fs.delete(uri);
+                } catch {
+                    // File may already be deleted — that's fine
+                }
+
+                try {
+                    // DotRush registers "dotrush.reloadWorkspace" to reload Roslyn workspace
+                    // This re-reads .csproj/.sln files and refreshes diagnostics
+                    await vscode.commands.executeCommand('dotrush.reloadWorkspace');
+                    console.log('[Antigravity Unity] DotRush workspace reload triggered successfully');
+                } catch (err) {
+                    // DotRush might not be installed — fall back to extension host restart
+                    console.warn('[Antigravity Unity] Failed to reload DotRush workspace:', err);
+                }
+            }, 1500);
+        };
+
+        // Trigger on both create (first time) and change (subsequent syncs)
+        watcher.onDidCreate(handleMarkerChange);
+        watcher.onDidChange(handleMarkerChange);
+
+        context.subscriptions.push(watcher);
+    }
+
+    console.log('[Antigravity Unity] .csproj change watcher initialized');
+}
 
 
 export function deactivate() {
