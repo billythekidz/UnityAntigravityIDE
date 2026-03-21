@@ -257,15 +257,71 @@ function setupCsprojChangeWatcher(context: vscode.ExtensionContext): void {
         slnWatcher.onDidCreate(handleProjectFileChange);
         slnWatcher.onDidChange(handleProjectFileChange);
 
-        // .cs file deletions — .csproj still references the file, causing stale errors
+        // .cs file deletions — remove stale <Compile> entries from .csproj
+        // so DotRush doesn't try to compile a missing file.
+        // The .csproj modification then triggers csprojWatcher → DotRush reload.
         csFileWatcher.onDidDelete((uri: vscode.Uri) => {
-            triggerReload(`C# file deleted: ${path.basename(uri.fsPath)}`);
+            removeCsprojCompileEntry(uri, folder.uri.fsPath);
         });
 
         context.subscriptions.push(csprojWatcher, slnWatcher, csFileWatcher);
     }
 
     console.log('[Antigravity Unity] .csproj/.sln and .cs file watchers initialized');
+}
+
+/**
+ * Removes <Compile Include="..."> entries for a deleted .cs file from all .csproj files.
+ * Unity uses forward-slash relative paths (e.g. "Assets/Scripts/Foo.cs").
+ * The .csproj write triggers the existing csprojWatcher → DotRush reload chain.
+ */
+async function removeCsprojCompileEntry(deletedFileUri: vscode.Uri, workspaceRoot: string): Promise<void> {
+    const fs = await import('fs');
+
+    // Build the relative path Unity uses in .csproj (forward slashes)
+    const relativePath = path.relative(workspaceRoot, deletedFileUri.fsPath).replace(/\\/g, '/');
+    const fileName = path.basename(deletedFileUri.fsPath);
+
+    // Find all .csproj files in workspace root (Unity puts them at project root)
+    const csprojFiles = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(workspaceRoot, '*.csproj')
+    );
+
+    let modified = false;
+
+    for (const csproj of csprojFiles) {
+        try {
+            const content = fs.readFileSync(csproj.fsPath, 'utf8');
+
+            // Match <Compile Include="Assets/GameSparksServer/Foo.cs" /> (with optional whitespace)
+            // Unity uses both self-closing and full tags
+            const escapedPath = relativePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const pattern = new RegExp(
+                `^\\s*<Compile\\s+Include="${escapedPath}"\\s*/>\\s*\\r?\\n?`,
+                'gm'
+            );
+
+            if (pattern.test(content)) {
+                const updated = content.replace(pattern, '');
+                fs.writeFileSync(csproj.fsPath, updated, 'utf8');
+                modified = true;
+                console.log(`[Antigravity Unity] Removed <Compile> entry for ${fileName} from ${path.basename(csproj.fsPath)}`);
+            }
+        } catch (err) {
+            console.warn(`[Antigravity Unity] Failed to update ${path.basename(csproj.fsPath)}:`, err);
+        }
+    }
+
+    if (!modified) {
+        // File wasn't in any .csproj — still trigger reload to clear cached diagnostics
+        console.log(`[Antigravity Unity] ${fileName} not found in any .csproj — triggering DotRush reload`);
+        try {
+            await vscode.commands.executeCommand('dotrush.reloadWorkspace');
+        } catch (err) {
+            console.warn('[Antigravity Unity] Failed to reload DotRush workspace:', err);
+        }
+    }
+    // If modified, the csprojWatcher will detect the change and trigger reload automatically
 }
 
 
