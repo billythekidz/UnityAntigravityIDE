@@ -2,6 +2,9 @@
 
 All notable changes to the Antigravity Unity extension will be documented in this file.
 
+## v1.2.52
+- fix: improve ProjectGeneration.cs reliability
+
 ## v1.2.51
 - chore: update ProjectGeneration.cs
 

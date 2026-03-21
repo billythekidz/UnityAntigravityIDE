@@ -120,13 +120,18 @@ public static class ProjectGeneration
     };
 
     /// <summary>
-    /// After Unity finishes compiling scripts, regenerate .csproj files.
+    /// Register a pre-compile callback to regenerate .csproj files BEFORE Unity compiles.
     /// This ensures stale <Compile> entries (from files deleted/renamed outside Unity)
-    /// are cleaned up once Unity's AssetDatabase catches up.
+    /// are cleaned up before the compiler processes them.
     /// The .csproj change then triggers the VS Code extension watcher → DotRush reload.
     /// </summary>
-    [UnityEditor.Callbacks.DidReloadScripts]
-    private static void OnScriptsReloaded()
+    [InitializeOnLoadMethod]
+    private static void RegisterCompilationCallbacks()
+    {
+        CompilationPipeline.compilationStarted += OnCompilationStarted;
+    }
+
+    private static void OnCompilationStarted(object context)
     {
         Sync(isManual: false);
     }
