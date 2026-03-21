@@ -219,20 +219,25 @@ function setupCsprojChangeWatcher(context: vscode.ExtensionContext): void {
             new vscode.RelativePattern(folder, '*.sln')
         );
 
-        // Debounce: Unity may regenerate multiple .csproj files in quick succession
+        // Watch .cs file deletions — DotRush loads from .csproj which still
+        // references deleted files, causing stale errors until workspace reload
+        const csFileWatcher = vscode.workspace.createFileSystemWatcher(
+            new vscode.RelativePattern(folder, '**/*.cs')
+        );
+
+        // Debounce: multiple file operations may happen in quick succession
         let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const handleProjectFileChange = (uri: vscode.Uri) => {
+        const triggerReload = (reason: string) => {
             if (debounceTimer) {
                 clearTimeout(debounceTimer);
             }
 
-            // Wait 2s for all .csproj writes to settle before reloading
+            // Wait 2s for all file operations to settle before reloading
             debounceTimer = setTimeout(async () => {
                 debounceTimer = null;
 
-                const fileName = path.basename(uri.fsPath);
-                console.log(`[Antigravity Unity] Project file changed: ${fileName} — reloading DotRush workspace...`);
+                console.log(`[Antigravity Unity] ${reason} — reloading DotRush workspace...`);
 
                 try {
                     await vscode.commands.executeCommand('dotrush.reloadWorkspace');
@@ -243,16 +248,24 @@ function setupCsprojChangeWatcher(context: vscode.ExtensionContext): void {
             }, 2000);
         };
 
-        // Watch for external changes (create/change) — not just editor saves
+        // .csproj/.sln changes (from Unity regeneration)
+        const handleProjectFileChange = (uri: vscode.Uri) => {
+            triggerReload(`Project file changed: ${path.basename(uri.fsPath)}`);
+        };
         csprojWatcher.onDidCreate(handleProjectFileChange);
         csprojWatcher.onDidChange(handleProjectFileChange);
         slnWatcher.onDidCreate(handleProjectFileChange);
         slnWatcher.onDidChange(handleProjectFileChange);
 
-        context.subscriptions.push(csprojWatcher, slnWatcher);
+        // .cs file deletions — .csproj still references the file, causing stale errors
+        csFileWatcher.onDidDelete((uri: vscode.Uri) => {
+            triggerReload(`C# file deleted: ${path.basename(uri.fsPath)}`);
+        });
+
+        context.subscriptions.push(csprojWatcher, slnWatcher, csFileWatcher);
     }
 
-    console.log('[Antigravity Unity] .csproj/.sln file watcher initialized');
+    console.log('[Antigravity Unity] .csproj/.sln and .cs file watchers initialized');
 }
 
 
