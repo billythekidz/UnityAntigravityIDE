@@ -9,7 +9,7 @@ description: How to find and read DotRush extension logs for debugging compilati
 DotRush writes its own logs directly to:
 
 ```
-~/.antigravity/extensions/nromanov.dotrush-<version>-<platform>/extension/bin/LanguageServer/logs/
+~/.antigravity-ide/extensions/nromanov.dotrush-<version>-<platform>/extension/bin/LanguageServer/logs/
 ```
 
 Files:
@@ -19,13 +19,13 @@ Files:
 ### Quick access:
 ```bash
 # Error log (most useful for debugging)
-cat ~/.antigravity/extensions/nromanov.dotrush-*/extension/bin/LanguageServer/logs/Error.log
+cat ~/.antigravity-ide/extensions/nromanov.dotrush-*/extension/bin/LanguageServer/logs/Error.log
 
 # Debug log
-cat ~/.antigravity/extensions/nromanov.dotrush-*/extension/bin/LanguageServer/logs/Debug.log
+cat ~/.antigravity-ide/extensions/nromanov.dotrush-*/extension/bin/LanguageServer/logs/Debug.log
 
 # DevHost logs (less common)
-cat ~/.antigravity/extensions/nromanov.dotrush-*/extension/bin/DevHost/logs/Debug.log
+cat ~/.antigravity-ide/extensions/nromanov.dotrush-*/extension/bin/DevHost/logs/Debug.log
 ```
 
 ## Antigravity IDE Extension Host Logs (Secondary)
@@ -33,16 +33,16 @@ cat ~/.antigravity/extensions/nromanov.dotrush-*/extension/bin/DevHost/logs/Debu
 Shows when DotRush extension activates/deactivates:
 
 ```
-~/Library/Application Support/Antigravity/logs/<session>/window<N>/exthost/exthost.log
+~/Library/Application Support/Antigravity IDE/logs/<session>/window<N>/exthost/exthost.log
 ```
 
 ### Quick access:
 ```bash
 # Find latest session
-ls -t ~/Library/Application\ Support/Antigravity/logs/ | head -1
+ls -t ~/Library/Application\ Support/Antigravity\ IDE/logs/ | head -1
 
 # Search for DotRush activation in latest window's exthost log
-grep -i "dotrush" ~/Library/Application\ Support/Antigravity/logs/$(ls -t ~/Library/Application\ Support/Antigravity/logs/ | head -1)/window*/exthost/exthost.log
+grep -i "dotrush" ~/Library/Application\ Support/Antigravity\ IDE/logs/$(ls -t ~/Library/Application\ Support/Antigravity\ IDE/logs/ | head -1)/window*/exthost/exthost.log
 ```
 
 ## DotRush Process Check
