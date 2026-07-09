@@ -10,7 +10,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public class AntigravityScriptEditor : IExternalCodeEditor
 {
-    const string EditorName = "Antigravity";
+    const string EditorName = "Antigravity IDE";
     const string PrefKey_DebugPort = "Antigravity_DebugPort";
     const string PrefKey_ReuseWindow = "Antigravity_ReuseWindow";
     const string PrefKey_GenerateLaunchJson = "Antigravity_GenerateLaunchJson";
@@ -24,15 +24,16 @@ public class AntigravityScriptEditor : IExternalCodeEditor
     static readonly string[] k_SupportedFileNames =
     {
         // Windows
-        "antigravity.exe",
         "antigravityide.exe",
+        "antigravityideinsiders.exe",
         // macOS (.app bundles and inner binaries)
-        "antigravity.app",
         "antigravityide.app",
-        "antigravity",
+        "antigravityideinsiders.app",
         "antigravityide",
+        "antigravityideinsiders",
         // Linux
         "antigravityide",
+        "antigravityideinsiders",
     };
 
     static readonly string DefaultArgument = "\"$(ProjectPath)\" -g \"$(File)\":$(Line):$(Column)";
@@ -90,33 +91,40 @@ public class AntigravityScriptEditor : IExternalCodeEditor
             if (Application.platform == RuntimePlatform.OSXEditor)
             {
                 // System Applications
-                paths.Add("/Applications/Antigravity.app");
                 paths.Add("/Applications/Antigravity IDE.app");
+                paths.Add("/Applications/Antigravity IDE Insiders.app");
                 // User Applications
                 var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                paths.Add(Path.Combine(userProfile, "Applications", "Antigravity.app"));
                 paths.Add(Path.Combine(userProfile, "Applications", "Antigravity IDE.app"));
+                paths.Add(Path.Combine(userProfile, "Applications", "Antigravity IDE Insiders.app"));
                 // Homebrew
-                paths.Add("/opt/homebrew/bin/antigravity");
-                paths.Add("/usr/local/bin/antigravity");
+                paths.Add("/opt/homebrew/bin/antigravity-ide");
+                paths.Add("/usr/local/bin/antigravity-ide");
+                paths.Add("/opt/homebrew/bin/antigravity-ide-insiders");
+                paths.Add("/usr/local/bin/antigravity-ide-insiders");
             }
             else if (Application.platform == RuntimePlatform.WindowsEditor)
             {
                 var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                paths.Add(Path.Combine(localAppData, "Programs", "Antigravity", "Antigravity.exe"));
                 paths.Add(Path.Combine(localAppData, "Programs", "Antigravity IDE", "Antigravity IDE.exe"));
+                paths.Add(Path.Combine(localAppData, "Programs", "Antigravity IDE Insiders", "Antigravity IDE Insiders.exe"));
 
                 var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-                paths.Add(Path.Combine(programFiles, "Antigravity", "Antigravity.exe"));
+                paths.Add(Path.Combine(programFiles, "Antigravity IDE", "Antigravity IDE.exe"));
+                paths.Add(Path.Combine(programFiles, "Antigravity IDE Insiders", "Antigravity IDE Insiders.exe"));
             }
             else if (Application.platform == RuntimePlatform.LinuxEditor)
             {
-                paths.Add("/opt/Antigravity/antigravity");
-                paths.Add("/usr/bin/antigravity");
-                paths.Add("/usr/local/bin/antigravity");
+                paths.Add("/opt/antigravity-ide/antigravity-ide");
+                paths.Add("/opt/antigravity-ide-insiders/antigravity-ide-insiders");
+                paths.Add("/usr/bin/antigravity-ide");
+                paths.Add("/usr/local/bin/antigravity-ide");
+                paths.Add("/usr/bin/antigravity-ide-insiders");
+                paths.Add("/usr/local/bin/antigravity-ide-insiders");
 
                 var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                paths.Add(Path.Combine(userProfile, ".local", "bin", "antigravity"));
+                paths.Add(Path.Combine(userProfile, ".local", "bin", "antigravity-ide"));
+                paths.Add(Path.Combine(userProfile, ".local", "bin", "antigravity-ide-insiders"));
             }
 
             return paths.ToArray();
@@ -156,6 +164,48 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         return KnownPaths.Any(p => File.Exists(p) || Directory.Exists(p));
     }
 
+    [Serializable]
+    private class AntigravityManifest
+    {
+        public string name;
+    }
+
+    private static bool IsValidAntigravityIDEManifest(string installPath)
+    {
+        try
+        {
+            string manifestPath;
+
+            if (Application.platform == RuntimePlatform.OSXEditor && installPath.EndsWith(".app"))
+            {
+                // macOS: .app/Contents/Resources/app/package.json
+                manifestPath = Path.Combine(installPath, "Contents", "Resources", "app", "package.json");
+            }
+            else
+            {
+                // Windows/Linux: sibling resources/ directory relative to the executable
+                string installDir = Directory.Exists(installPath) ? installPath : Path.GetDirectoryName(installPath);
+                if (string.IsNullOrEmpty(installDir)) return true;
+                manifestPath = Path.Combine(installDir, "resources", "app", "package.json");
+            }
+
+            if (!File.Exists(manifestPath))
+                return true; // No manifest → can't reject, give benefit of the doubt
+
+            var manifest = JsonUtility.FromJson<AntigravityManifest>(File.ReadAllText(manifestPath));
+
+            if (!string.IsNullOrEmpty(manifest.name) &&
+                manifest.name.IndexOf("Antigravity IDE", StringComparison.OrdinalIgnoreCase) < 0)
+                return false; // Manifest exists but it's NOT the IDE → reject
+
+            return true;
+        }
+        catch (Exception)
+        {
+            return true; // Read/parse failure → give benefit of the doubt
+        }
+    }
+
     // ✅ LEARN: Filename-based check like IsVSCodeInstallation
     private static bool IsAntigravityInstallation(string path)
     {
@@ -164,15 +214,18 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         // Check filename directly
         var filename = Path.GetFileName(path);
         var normalized = NormalizeFileName(filename);
-        if (k_SupportedFileNames.Contains(normalized))
-            return true;
+        bool filenameMatch = k_SupportedFileNames.Contains(normalized);
 
-        // On macOS, the inner binary might be "Electron" inside "Antigravity.app"
-        // Check if any parent directory is an Antigravity .app bundle
-        if (path.IndexOf("Antigravity", StringComparison.OrdinalIgnoreCase) >= 0)
-            return true;
+        // On macOS, the inner binary might be "Electron" inside "Antigravity IDE.app"
+        // Check if any parent directory is an Antigravity IDE .app bundle
+        bool pathMatch = path.IndexOf("Antigravity IDE", StringComparison.OrdinalIgnoreCase) >= 0
+                      || path.IndexOf("antigravity-ide", StringComparison.OrdinalIgnoreCase) >= 0;
 
-        return false;
+        if (!filenameMatch && !pathMatch)
+            return false;
+
+        // Defense-in-depth: reject if manifest confirms this is the agent app
+        return IsValidAntigravityIDEManifest(path);
     }
 
     private static string GetExecutablePath(string path)
@@ -181,7 +234,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         if (Application.platform == RuntimePlatform.OSXEditor && path.EndsWith(".app"))
         {
             // Try the CLI binary first (reliable for --goto args)
-            string cliBinary = Path.Combine(path, "Contents", "Resources", "app", "bin", "antigravity");
+            string cliBinary = Path.Combine(path, "Contents", "Resources", "app", "bin", "antigravity-ide");
             if (File.Exists(cliBinary)) return cliBinary;
 
             // Fallback: inner binary in MacOS/
@@ -192,7 +245,7 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 string executable = Path.Combine(macosDir, appName);
                 if (File.Exists(executable)) return executable;
 
-                foreach (var name in new[] { "Antigravity", "Antigravity IDE", "antigravity", "Electron" })
+                foreach (var name in new[] { "Antigravity IDE", "antigravity-ide", "Electron" })
                 {
                     executable = Path.Combine(macosDir, name);
                     if (File.Exists(executable)) return executable;
@@ -383,9 +436,9 @@ public class AntigravityScriptEditor : IExternalCodeEditor
                 }
                 else
                 {
-                    // Opening a file at line:col — use antigravity:// URL scheme
+                    // Opening a file at line:col — use antigravity-ide:// URL scheme
                     // macOS routes this to the existing app instance (no new dock icon)
-                    string uri = $"antigravity://file{filePath}:{line}:{column}";
+                    string uri = $"antigravity-ide://file{filePath}:{line}:{column}";
                     process.StartInfo.Arguments = $"\"{uri}\"";
                 }
             }
@@ -471,9 +524,17 @@ public class AntigravityScriptEditor : IExternalCodeEditor
         var filename = Path.GetFileName(editorPath);
         var normalized = NormalizeFileName(filename);
         bool filenameMatch = k_SupportedFileNames.Contains(normalized);
-        bool pathMatch = editorPath.IndexOf("antigravity", StringComparison.OrdinalIgnoreCase) >= 0;
+        bool pathMatch = editorPath.IndexOf("Antigravity IDE", StringComparison.OrdinalIgnoreCase) >= 0
+                      || editorPath.IndexOf("antigravity-ide", StringComparison.OrdinalIgnoreCase) >= 0;
 
         if (!filenameMatch && !pathMatch)
+        {
+            installation = default;
+            return false;
+        }
+
+        // Defense-in-depth: reject if manifest confirms this is the agent app
+        if (!IsValidAntigravityIDEManifest(editorPath))
         {
             installation = default;
             return false;

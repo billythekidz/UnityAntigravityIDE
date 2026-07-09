@@ -25,3 +25,6 @@ extensions-vsix~/
 release-extension.ps1
 antigravity-unity-extension~/release-extension.ps1
 *.unitypackage
+
+# Local agent database / CodeGraph index
+.codegraph/
